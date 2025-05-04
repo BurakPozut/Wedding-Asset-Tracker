@@ -45,3 +45,7 @@ prisma/generated
 prisma/generated/*
 prisma/seed.ts
 prisma/migrations
+altin.py
+altinfiyatlari.json
+altinfiyatlari.xlsx
+postgres_import.py

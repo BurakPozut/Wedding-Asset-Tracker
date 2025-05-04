@@ -8,22 +8,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// NextAuth Models
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?  @db.Text
-  session_state      String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@index([userId])
@@ -35,7 +33,7 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   @@index([userId])
 }
 
@@ -47,17 +45,16 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// Existing Models
 model User {
   id            String    @id @default(uuid())
   email         String    @unique
   name          String?
-  image         String?
-  emailVerified DateTime?
   createdAt     DateTime  @default(now())
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
   assets        Asset[]
   donors        Donor[]
-  accounts      Account[]
   sessions      Session[]
 }
 
@@ -74,6 +71,7 @@ model Asset {
   donorId      String
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+  quantity     Int       @default(1)
   donor        Donor     @relation(fields: [donorId], references: [id], onDelete: Cascade)
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -92,6 +90,22 @@ model Donor {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model gram_gold_prices {
+  id         Int       @id @default(autoincrement())
+  price_date DateTime  @unique @db.Date
+  bid_price  Decimal   @db.Decimal(10, 4)
+  ask_price  Decimal   @db.Decimal(10, 4)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model cey_gold_prices {
+  id         Int       @id @default(autoincrement())
+  price_date DateTime  @unique @db.Date
+  bid_price  Decimal   @db.Decimal(10, 4)
+  ask_price  Decimal   @db.Decimal(10, 4)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
 }
 
 enum AssetType {
