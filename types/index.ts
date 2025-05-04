@@ -1,0 +1,63 @@
+// Define AssetType enum to match Prisma schema
+export enum AssetType {
+  CEYREK_ALTIN = "CEYREK_ALTIN",
+  TAM_ALTIN = "TAM_ALTIN",
+  RESAT = "RESAT",
+  BESI_BIR_YERDE = "BESI_BIR_YERDE",
+  BILEZIK = "BILEZIK",
+  GRAM_GOLD = "GRAM_GOLD",
+  TURKISH_LIRA = "TURKISH_LIRA",
+  DOLLAR = "DOLLAR",
+  EURO = "EURO"
+}
+
+export type Asset = {
+  id: string;
+  userId: string;
+  type: AssetType;
+  amount?: number | null;
+  grams?: number | null;
+  carat?: number | null;
+  initialValue: number;
+  currentValue?: number | null;
+  dateReceived: Date;
+  donorId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  donor?: Donor;
+};
+
+export type Donor = {
+  id: string;
+  userId: string;
+  name: string;
+  isGroomSide: boolean;
+  isBrideSide: boolean;
+  createdAt: Date;
+  assets?: Asset[];
+};
+
+export type User = {
+  id: string;
+  email: string;
+  name?: string | null;
+  createdAt: Date;
+};
+
+// Type definitions for form validation
+export type AssetFormData = {
+  type: AssetType;
+  amount?: number;
+  grams?: number;
+  carat?: number;
+  initialValue: number;
+  currentValue?: number;
+  dateReceived: Date | string;
+  donorId: string;
+};
+
+export type DonorFormData = {
+  name: string;
+  isGroomSide: boolean;
+  isBrideSide: boolean;
+}; 
