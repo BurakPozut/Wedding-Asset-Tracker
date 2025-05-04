@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { AssetType } from "@/types";
 import Link from "next/link";
+import { useWeddingDate } from "@/context/wedding-date-context";
 
 // Map AssetType to Turkish display name
 const assetTypeNames: Record<string, string> = {
@@ -21,6 +22,7 @@ const assetTypeNames: Record<string, string> = {
 
 export default function IntegratedAddPage() {
   const router = useRouter();
+  const { weddingDate } = useWeddingDate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -34,7 +36,10 @@ export default function IntegratedAddPage() {
   const [amount, setAmount] = useState<number | undefined>(undefined);
   const [grams, setGrams] = useState<number | undefined>(undefined);
   const [carat, setCarat] = useState<number | undefined>(undefined);
-  const [dateReceived, setDateReceived] = useState<string>(new Date().toISOString().split("T")[0]);
+  // Use wedding date as default if available, otherwise use current date
+  const [dateReceived, setDateReceived] = useState<string>(
+    weddingDate || new Date().toISOString().split("T")[0]
+  );
   
   // Determine if fields should be shown based on asset type
   const showMoneyFields = assetType === AssetType.TURKISH_LIRA || assetType === AssetType.DOLLAR || assetType === AssetType.EURO;
@@ -50,12 +55,6 @@ export default function IntegratedAddPage() {
     // At least one side must be selected
     if (!isGroomSide && !isBrideSide) {
       setError("Gelin veya damat tarafı seçmelisiniz.");
-      return false;
-    }
-    
-    // Validate quantity
-    if (!quantity || quantity < 1) {
-      setError("Adet en az 1 olmalıdır.");
       return false;
     }
     
@@ -359,22 +358,27 @@ export default function IntegratedAddPage() {
                   </div>
                 </>
               )}
-              
-              <div className="mt-4">
-                <label htmlFor="dateReceived" className="block text-sm font-medium leading-6 text-gray-900">
-                  Alınma Tarihi
-                </label>
-                <div className="mt-2">
-                  <input
-                    id="dateReceived"
-                    name="dateReceived"
-                    type="date"
-                    required
-                    value={dateReceived}
-                    onChange={(e) => setDateReceived(e.target.value)}
-                    className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                  />
-                </div>
+            </div>
+            
+            <div className="mt-4">
+              <label htmlFor="dateReceived" className="block text-sm font-medium leading-6 text-gray-900">
+                Alınma Tarihi
+              </label>
+              <div className="mt-2">
+                <input
+                  id="dateReceived"
+                  name="dateReceived"
+                  type="date"
+                  required
+                  value={dateReceived}
+                  onChange={(e) => setDateReceived(e.target.value)}
+                  className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                />
+                {assetType === AssetType.CEYREK_ALTIN && (
+                  <p className="mt-1 text-sm text-gray-500">
+                    Çeyrek Altın değeri seçilen tarihe göre otomatik hesaplanacaktır.
+                  </p>
+                )}
               </div>
             </div>
             

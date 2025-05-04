@@ -52,6 +52,7 @@ model User {
   createdAt     DateTime  @default(now())
   emailVerified DateTime?
   image         String?
+  weddingDate   DateTime?
   accounts      Account[]
   assets        Asset[]
   donors        Donor[]

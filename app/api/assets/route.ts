@@ -57,18 +57,42 @@ const getGoldValueByKarat = (caratValue: number, baseValue: number): number => {
 };
 
 // Calculate asset value based on type and properties
-const calculateAssetValue = (
+const calculateAssetValue = async (
   type: AssetType, 
   quantity: number = 1,
   amount?: number, 
   grams?: number, 
-  carat?: number
-): number => {
+  carat?: number,
+  dateReceived?: Date
+): Promise<number> => {
   let unitValue = 0;
   
   switch (type) {
     case AssetType.CEYREK_ALTIN:
-      unitValue = assetPrices.CEYREK_ALTIN;
+      if (dateReceived) {
+        // Format date to match the format in the DB (YYYY-MM-DD)
+        const formattedDate = dateReceived.toISOString().split('T')[0];
+        
+        // Try to find a price from the cey_gold_prices table for the exact date
+        let goldPrice = await prisma.cey_gold_prices.findFirst({
+          where: { price_date: new Date(formattedDate) },
+          select: { bid_price: true }
+        });
+        
+        // If no price found for exact date, get the closest previous price
+        if (!goldPrice) {
+          goldPrice = await prisma.cey_gold_prices.findFirst({
+            where: { price_date: { lte: new Date(formattedDate) } },
+            orderBy: { price_date: 'desc' },
+            select: { bid_price: true }
+          });
+        }
+        
+        // If still no price found, use fallback mock price
+        unitValue = goldPrice ? parseFloat(goldPrice.bid_price.toString()) : assetPrices.CEYREK_ALTIN;
+      } else {
+        unitValue = assetPrices.CEYREK_ALTIN;
+      }
       break;
     
     case AssetType.TAM_ALTIN:
@@ -172,13 +196,15 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Calculate asset value
-    const calculatedValue = calculateAssetValue(
+    // Calculate asset value - now with date parameter
+    const dateReceived = new Date(data.dateReceived);
+    const calculatedValue = await calculateAssetValue(
       data.type,
       quantity,
       data.amount, 
       data.grams, 
-      data.carat
+      data.carat,
+      dateReceived
     );
     
     // Create the asset
@@ -192,7 +218,7 @@ export async function POST(request: NextRequest) {
         carat: data.carat || null,
         initialValue: calculatedValue,
         currentValue: calculatedValue, // Initially set to calculated value
-        dateReceived: new Date(data.dateReceived),
+        dateReceived: dateReceived,
         donorId: data.donorId,
       },
       include: { donor: true },

@@ -76,6 +76,12 @@ export function Header() {
               <span className="text-sm text-gray-700">
                 Merhaba, {session.user?.name || session.user?.email}
               </span>
+              <Link 
+                href="/profil/ayarlar"
+                className="text-sm font-semibold text-gray-600 hover:text-indigo-500"
+              >
+                Ayarlar
+              </Link>
               <button
                 onClick={() => signOut({ callbackUrl: "/" })}
                 className="text-sm font-semibold text-indigo-600 hover:text-indigo-500"
@@ -114,15 +120,24 @@ export function Header() {
             }
             
             {status === "authenticated" ? (
-              <button
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  signOut({ callbackUrl: "/" });
-                }}
-                className="block w-full text-left px-3 py-2 text-base font-medium text-indigo-600 hover:bg-gray-50 rounded-md"
-              >
-                Çıkış Yap
-              </button>
+              <>
+                <Link
+                  href="/profil/ayarlar"
+                  className="block w-full text-left px-3 py-2 text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-indigo-500 rounded-md"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Ayarlar
+                </Link>
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    signOut({ callbackUrl: "/" });
+                  }}
+                  className="block w-full text-left px-3 py-2 text-base font-medium text-indigo-600 hover:bg-gray-50 rounded-md"
+                >
+                  Çıkış Yap
+                </button>
+              </>
             ) : (
               <button
                 onClick={() => {
