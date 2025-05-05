@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../prisma/generated/client"
+  //output   = "../prisma/generated/client"
 }
 
 datasource db {
@@ -60,24 +60,33 @@ model User {
 }
 
 model Asset {
-  id           String    @id @default(uuid())
+  id           String        @id @default(uuid())
   userId       String
-  type         AssetType
-  amount       Float?
   grams        Float?
   carat        Int?
   initialValue Float
   currentValue Float?
   dateReceived DateTime
   donorId      String
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  quantity     Int       @default(1)
-  donor        Donor     @relation(fields: [donorId], references: [id], onDelete: Cascade)
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  quantity     Int           @default(1)
+  assetTypeId  String
+  assetType    AssetTypeInfo @relation(fields: [assetTypeId], references: [id])
+  donor        Donor         @relation(fields: [donorId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([donorId])
+  @@index([assetTypeId])
+}
+
+model AssetTypeInfo {
+  id           String    @id @default(uuid())
+  type         AssetType @unique
+  currentValue Float
+  lastUpdated  DateTime  @default(now())
+  assets       Asset[]
 }
 
 model Donor {

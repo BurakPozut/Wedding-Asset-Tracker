@@ -70,19 +70,19 @@ export function AssetTable({ assets, onDelete }: AssetTableProps) {
             assets.map((asset) => (
               <tr key={asset.id}>
                 <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900">
-                  {assetTypeNames[asset.type]}
+                  {assetTypeNames[asset.assetType.type]}
                 </td>
                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                  {asset.type === AssetType.BILEZIK || asset.type === AssetType.GRAM_GOLD ? (
+                  {asset.assetType.type === AssetType.BILEZIK || asset.assetType.type === AssetType.GRAM_GOLD ? (
                     <>
                       {asset.grams} gram / {asset.carat} ayar
                     </>
-                  ) : (asset.type === AssetType.TURKISH_LIRA || 
-                         asset.type === AssetType.DOLLAR || 
-                         asset.type === AssetType.EURO) ? (
+                  ) : (asset.assetType.type === AssetType.TURKISH_LIRA || 
+                         asset.assetType.type === AssetType.DOLLAR || 
+                         asset.assetType.type === AssetType.EURO) ? (
                     <>{asset.amount} {
-                      asset.type === AssetType.TURKISH_LIRA ? "TL" :
-                      asset.type === AssetType.DOLLAR ? "USD" : "EUR"
+                      asset.assetType.type === AssetType.TURKISH_LIRA ? "TL" :
+                      asset.assetType.type === AssetType.DOLLAR ? "USD" : "EUR"
                     }</>
                   ) : (
                     "1 adet"

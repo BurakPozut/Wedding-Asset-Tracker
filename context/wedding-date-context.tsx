@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { WeddingDateModal } from "@/components/wedding-date-modal";
+import { useSession } from "next-auth/react";
 
 interface WeddingDateContextType {
   weddingDate: string | null;
@@ -24,6 +25,7 @@ interface WeddingDateProviderProps {
 }
 
 export function WeddingDateProvider({ children }: WeddingDateProviderProps) {
+  const { data: session, status } = useSession();
   const [weddingDate, setWeddingDate] = useState<string | null>(null);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -31,26 +33,35 @@ export function WeddingDateProvider({ children }: WeddingDateProviderProps) {
   useEffect(() => {
     async function fetchWeddingDate() {
       try {
-        const response = await fetch("/api/user/wedding-date");
-        const data = await response.json();
-        
-        if (data.weddingDate) {
-          // Format the date as YYYY-MM-DD
-          const date = new Date(data.weddingDate);
-          const formattedDate = date.toISOString().split("T")[0];
-          setWeddingDate(formattedDate);
-        } else {
-          setShowModal(true);
+        // Only fetch wedding date if the user is authenticated
+        if (status === "authenticated" && session) {
+          const response = await fetch("/api/user/wedding-date");
+          const data = await response.json();
+          
+          if (data.weddingDate) {
+            // Format the date as YYYY-MM-DD
+            const date = new Date(data.weddingDate);
+            const formattedDate = date.toISOString().split("T")[0];
+            setWeddingDate(formattedDate);
+          } else {
+            setShowModal(true);
+          }
         }
       } catch (error) {
         console.error("Error fetching wedding date:", error);
       } finally {
-        setIsLoading(false);
+        // Only set loading to false if authenticated or if authentication has been checked
+        if (status !== "loading") {
+          setIsLoading(false);
+        }
       }
     }
 
-    fetchWeddingDate();
-  }, []);
+    // Only fetch if the session status is not loading
+    if (status !== "loading") {
+      fetchWeddingDate();
+    }
+  }, [session, status]);
 
   const handleSetWeddingDate = async (date: string) => {
     try {
@@ -76,7 +87,7 @@ export function WeddingDateProvider({ children }: WeddingDateProviderProps) {
   return (
     <WeddingDateContext.Provider value={{ weddingDate, setWeddingDate: handleSetWeddingDate, isLoading }}>
       {children}
-      {showModal && <WeddingDateModal onDateSet={handleSetWeddingDate} />}
+      {showModal && status === "authenticated" && <WeddingDateModal onDateSet={handleSetWeddingDate} />}
     </WeddingDateContext.Provider>
   );
 } 

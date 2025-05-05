@@ -11,10 +11,18 @@ export enum AssetType {
   EURO = "EURO"
 }
 
+export type AssetTypeInfo = {
+  id: string;
+  type: AssetType;
+  currentValue: number;
+  lastUpdated: Date;
+};
+
 export type Asset = {
   id: string;
   userId: string;
-  type: AssetType;
+  assetTypeId: string;
+  assetType: AssetTypeInfo;
   amount?: number | null;
   grams?: number | null;
   carat?: number | null;

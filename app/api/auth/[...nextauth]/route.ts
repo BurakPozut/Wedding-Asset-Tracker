@@ -1,8 +1,8 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { PrismaClient } from "../../../../prisma/generated/client";
 import NextAuth, { AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { type DefaultSession } from "next-auth";
+import { PrismaClient } from "@prisma/client";
 
 // Extend the NextAuth session type
 declare module "next-auth" {

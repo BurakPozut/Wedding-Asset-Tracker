@@ -18,7 +18,10 @@ export async function GET() {
     
     const assets = await prisma.asset.findMany({
       where: { userId: session.user.id },
-      include: { donor: true },
+      include: { 
+        donor: true,
+        assetType: true 
+      },
       orderBy: { createdAt: "desc" },
     });
     
@@ -195,6 +198,18 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Get assetTypeInfo record by type enum value
+    const assetTypeInfo = await prisma.assetTypeInfo.findUnique({
+      where: { type: data.type },
+    });
+
+    if (!assetTypeInfo) {
+      return NextResponse.json(
+        { error: "Geçersiz varlık türü." },
+        { status: 400 }
+      );
+    }
     
     // Calculate asset value - now with date parameter
     const dateReceived = new Date(data.dateReceived);
@@ -211,9 +226,8 @@ export async function POST(request: NextRequest) {
     const asset = await prisma.asset.create({
       data: {
         userId: session.user.id,
-        type: data.type,
+        assetTypeId: assetTypeInfo.id, // Use the ID from assetTypeInfo
         quantity: quantity,
-        amount: data.amount || null,
         grams: data.grams || null,
         carat: data.carat || null,
         initialValue: calculatedValue,
@@ -221,7 +235,10 @@ export async function POST(request: NextRequest) {
         dateReceived: dateReceived,
         donorId: data.donorId,
       },
-      include: { donor: true },
+      include: { 
+        donor: true, 
+        assetType: true 
+      },
     });
     
     return NextResponse.json(asset);

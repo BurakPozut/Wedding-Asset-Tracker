@@ -134,8 +134,7 @@ export async function PUT(
     const asset = await prisma.asset.update({
       where: { id: params.id },
       data: {
-        type: data.type !== undefined ? data.type : undefined,
-        amount: data.amount !== undefined ? data.amount : undefined,
+        assetTypeId: data.assetTypeId !== undefined ? data.assetTypeId : undefined,
         grams: data.grams !== undefined ? data.grams : undefined,
         carat: data.carat !== undefined ? data.carat : undefined,
         initialValue: data.initialValue !== undefined ? data.initialValue : undefined,

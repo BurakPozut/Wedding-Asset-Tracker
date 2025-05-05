@@ -24,10 +24,13 @@ export default async function Dashboard() {
     redirect("/auth/giris");
   }
   
-  // Fetch data from database
+  // Fetch data from database - include the assetType relation
   const assets = await prisma.asset.findMany({
     where: { userId: session.user.id },
-    include: { donor: true },
+    include: { 
+      donor: true,
+      assetType: true 
+    },
     orderBy: { dateReceived: "desc" },
   });
   
@@ -62,11 +65,11 @@ export default async function Dashboard() {
   const displayGroomValue = sideDistribution.groom + (sideDistribution.both / 2);
   const displayBrideValue = sideDistribution.bride + (sideDistribution.both / 2);
   
-  // Calculate asset types summary
+  // Calculate asset types summary - use assetType.type for grouping
   const assetTypeMap = new Map();
   
   for (const asset of assets) {
-    const type = asset.type;
+    const type = asset.assetType.type;
     if (!assetTypeMap.has(type)) {
       assetTypeMap.set(type, { type, count: 0, totalValue: 0 });
     }
@@ -82,7 +85,7 @@ export default async function Dashboard() {
   // Get recent assets
   const recentAssets = assets.slice(0, 3).map(asset => ({
     id: asset.id,
-    type: asset.type,
+    type: asset.assetType.type,
     initialValue: asset.initialValue,
     donorName: asset.donor.name,
     date: asset.dateReceived.toISOString().split('T')[0],
