@@ -24,12 +24,11 @@ const assetTypeNames: Record<string, string> = {
 };
 
 export function AssetForm({ initialData, donors, onSubmit, isSubmitting = false }: AssetFormProps) {
-  const [type, setType] = useState<AssetType>(initialData?.type || AssetType.CEYREK_ALTIN);
+  const [type, setType] = useState<AssetType>(initialData?.assetType?.type || AssetType.CEYREK_ALTIN);
   const [amount, setAmount] = useState<number | undefined>(initialData?.amount || undefined);
   const [grams, setGrams] = useState<number | undefined>(initialData?.grams || undefined);
   const [carat, setCarat] = useState<number | undefined>(initialData?.carat || undefined);
   const [initialValue, setInitialValue] = useState<number>(initialData?.initialValue || 0);
-  const [currentValue, setCurrentValue] = useState<number | undefined>(initialData?.currentValue || undefined);
   const [dateReceived, setDateReceived] = useState<string>(
     initialData?.dateReceived 
       ? new Date(initialData.dateReceived).toISOString().split("T")[0] 
@@ -88,7 +87,6 @@ export function AssetForm({ initialData, donors, onSubmit, isSubmitting = false 
       grams,
       carat,
       initialValue,
-      currentValue,
       dateReceived,
       donorId,
     };
@@ -215,24 +213,6 @@ export function AssetForm({ initialData, donors, onSubmit, isSubmitting = false 
             required
             value={initialValue || ""}
             onChange={(e) => setInitialValue(parseFloat(e.target.value) || 0)}
-            className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-          />
-        </div>
-      </div>
-      
-      <div>
-        <label htmlFor="currentValue" className="block text-sm font-medium leading-6 text-gray-900">
-          Güncel Değer (TL) <span className="text-gray-500 text-xs">(Opsiyonel)</span>
-        </label>
-        <div className="mt-2">
-          <input
-            id="currentValue"
-            name="currentValue"
-            type="number"
-            step="0.01"
-            min="0"
-            value={currentValue || ""}
-            onChange={(e) => setCurrentValue(parseFloat(e.target.value) || undefined)}
             className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
           />
         </div>

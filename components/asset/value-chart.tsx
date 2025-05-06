@@ -12,6 +12,7 @@ import {
   Legend
 } from "chart.js";
 import { Line } from "react-chartjs-2";
+import { AssetTypeInfo } from "@prisma/client";
 
 ChartJS.register(
   CategoryScale,
@@ -30,7 +31,7 @@ type ValueHistoryPoint = {
 
 type ValueChartProps = {
   initialValue: number;
-  currentValue?: number;
+  assetType: AssetTypeInfo;
   dateReceived: Date;
   valueHistory?: ValueHistoryPoint[];
   assetName: string;
@@ -38,12 +39,21 @@ type ValueChartProps = {
 
 export function ValueChart({ 
   initialValue, 
-  currentValue, 
+  assetType,
   dateReceived, 
   valueHistory = [],
   assetName
 }: ValueChartProps) {
-  const [chartData, setChartData] = useState<any>(null);
+  const [chartData, setChartData] = useState<{
+    labels: string[];
+    datasets: {
+      label: string;
+      data: number[];
+      borderColor: string;
+      backgroundColor: string;
+      tension: number;
+    }[];
+  } | null>(null);
   
   useEffect(() => {
     // Prepare data for chart
@@ -58,10 +68,10 @@ export function ValueChart({
     }
     
     // Add current value as latest point if available
-    if (currentValue !== undefined && currentValue !== initialValue) {
+    if (assetType.currentValue !== undefined && assetType.currentValue !== initialValue) {
       const today = new Date().toISOString().split('T')[0];
       if (!sortedHistory.some(point => point.date === today)) {
-        sortedHistory.push({ date: today, value: currentValue });
+        sortedHistory.push({ date: today, value: assetType.currentValue });
       }
     }
     
@@ -85,7 +95,7 @@ export function ValueChart({
         },
       ],
     });
-  }, [initialValue, currentValue, dateReceived, valueHistory]);
+  }, [initialValue, assetType.currentValue, dateReceived, valueHistory]);
   
   const options = {
     responsive: true,

@@ -65,7 +65,6 @@ model Asset {
   grams        Float?
   carat        Int?
   initialValue Float
-  currentValue Float?
   dateReceived DateTime
   donorId      String
   createdAt    DateTime      @default(now())

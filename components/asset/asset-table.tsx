@@ -92,7 +92,7 @@ export function AssetTable({ assets, onDelete }: AssetTableProps) {
                   {formatCurrency(asset.initialValue)}
                 </td>
                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                  {asset.currentValue ? formatCurrency(asset.currentValue) : "-"}
+                  {formatCurrency(asset.assetType.currentValue)}
                 </td>
                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                   {asset.donor?.name || "-"}

@@ -231,7 +231,6 @@ export async function POST(request: NextRequest) {
         grams: data.grams || null,
         carat: data.carat || null,
         initialValue: calculatedValue,
-        currentValue: calculatedValue, // Initially set to calculated value
         dateReceived: dateReceived,
         donorId: data.donorId,
       },

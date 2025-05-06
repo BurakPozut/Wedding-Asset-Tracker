@@ -27,7 +27,6 @@ export type Asset = {
   grams?: number | null;
   carat?: number | null;
   initialValue: number;
-  currentValue?: number | null;
   dateReceived: Date;
   donorId: string;
   createdAt: Date;

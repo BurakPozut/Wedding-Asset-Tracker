@@ -1,0 +1,21 @@
+# Crontab Configuration for Gold Price Updates
+# Run this script at midnight every day
+
+# Add the following line to your crontab using:
+# crontab -e
+# Then paste this line:
+
+0 0 * * * cd /path/to/your/project/wedding-asset-tracker && npm run update-gold-prices >> logs/gold-price-updates.log 2>&1
+
+# This will:
+# 1. Run at midnight (0 0 * * *)
+# 2. Change to your project directory
+# 3. Run the npm script
+# 4. Log output to logs/gold-price-updates.log
+# 5. Redirect errors to the same log file (2>&1)
+
+# Make sure to replace "/path/to/your/project/" with the actual path to your project
+# For example: /Users/burakpozut/Projects/wedding-asset-tracker
+
+# Don't forget to create the logs directory:
+# mkdir -p logs 
