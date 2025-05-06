@@ -88,7 +88,7 @@ export function AssetSummary({ assets }: AssetSummaryProps) {
         type === AssetType.DOLLAR || 
         type === AssetType.EURO
       ) {
-        // For money types, use the amount/quantity
+        // For money types, use the quantity
         currentAssetValue = currentUnitValue * (asset.quantity || 1);
       } else {
         // For other types, use the quantity

@@ -117,6 +117,22 @@ model cey_gold_prices {
   created_at DateTime? @default(now()) @db.Timestamp(6)
 }
 
+model usd_exchange_rates {
+  id         Int       @id @default(autoincrement())
+  price_date DateTime  @unique @db.Date
+  bid_price  Decimal   @db.Decimal(10, 4)
+  ask_price  Decimal   @db.Decimal(10, 4)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model eur_exchange_rates {
+  id         Int       @id @default(autoincrement())
+  price_date DateTime  @unique @db.Date
+  bid_price  Decimal   @db.Decimal(10, 4)
+  ask_price  Decimal   @db.Decimal(10, 4)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+}
+
 enum AssetType {
   CEYREK_ALTIN
   TAM_ALTIN

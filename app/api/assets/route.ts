@@ -4,6 +4,20 @@ import { authOptions } from "../auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { AssetType } from "@/types";
 
+/**
+ * Assets API Route
+ * 
+ * This API handles creating and retrieving assets.
+ * It uses historical exchange rates from the database for:
+ * - CEYREK_ALTIN (from cey_gold_prices table)
+ * - GRAM_GOLD (from gram_gold_prices table)
+ * - DOLLAR (from usd_exchange_rates table)
+ * - EURO (from eur_exchange_rates table)
+ * 
+ * For other asset types (TAM_ALTIN, RESAT, etc.), it uses fixed values
+ * since we don't have historical data for these types yet.
+ */
+
 // GET /api/assets - Get all assets for the current user
 export async function GET() {
   try {
@@ -61,12 +75,58 @@ const getGoldValueByKarat = (caratValue: number, baseValue: number): number => {
 const calculateAssetValue = async (
   type: AssetType, 
   quantity: number = 1,
-  amount?: number, 
   grams?: number, 
   carat?: number,
   dateReceived?: Date
 ): Promise<number> => {
   let unitValue = 0;
+  
+  // Helper function to get the exchange rate from database for a given date
+  const getExchangeRate = async (tableName: 'usd_exchange_rates' | 'eur_exchange_rates', date: Date): Promise<number> => {
+    // Format date to match the format in the DB (YYYY-MM-DD)
+    const formattedDate = date.toISOString().split('T')[0];
+    
+    // Select the correct Prisma model based on tableName
+    let rateRecord;
+    if (tableName === 'usd_exchange_rates') {
+      // Try to find a price for the exact date
+      rateRecord = await prisma.usd_exchange_rates.findFirst({
+        where: { price_date: new Date(formattedDate) },
+        select: { bid_price: true }
+      });
+      
+      // If no price found for exact date, get the closest previous price
+      if (!rateRecord) {
+        rateRecord = await prisma.usd_exchange_rates.findFirst({
+          where: { price_date: { lte: new Date(formattedDate) } },
+          orderBy: { price_date: 'desc' },
+          select: { bid_price: true }
+        });
+      }
+    } else if (tableName === 'eur_exchange_rates') {
+      // Try to find a price for the exact date
+      rateRecord = await prisma.eur_exchange_rates.findFirst({
+        where: { price_date: new Date(formattedDate) },
+        select: { bid_price: true }
+      });
+      
+      // If no price found for exact date, get the closest previous price
+      if (!rateRecord) {
+        rateRecord = await prisma.eur_exchange_rates.findFirst({
+          where: { price_date: { lte: new Date(formattedDate) } },
+          orderBy: { price_date: 'desc' },
+          select: { bid_price: true }
+        });
+      }
+    }
+    
+    // If still no price found, throw an error
+    if (!rateRecord) {
+      throw new Error(`No exchange rate found for the given date (${formattedDate}) or any previous date`);
+    }
+    
+    return parseFloat(rateRecord.bid_price.toString());
+  };
   
   switch (type) {
     case AssetType.CEYREK_ALTIN:
@@ -145,22 +205,40 @@ const calculateAssetValue = async (
       break;
     
     case AssetType.TURKISH_LIRA:
-      unitValue = amount ? amount * assetPrices.TURKISH_LIRA : 0;
+      unitValue = quantity * assetPrices.TURKISH_LIRA;
       break;
     
     case AssetType.DOLLAR:
-      unitValue = amount ? amount * assetPrices.DOLLAR : 0;
+      if (!quantity || !dateReceived) return 0;
+      try {
+        // Get USD exchange rate from database
+        const exchangeRate = await getExchangeRate('usd_exchange_rates', dateReceived);
+        unitValue = quantity * exchangeRate;
+      } catch (error) {
+        console.error('Error getting USD exchange rate:', error);
+        // Fallback to mock price if database lookup fails
+        unitValue = quantity * assetPrices.DOLLAR;
+      }
       break;
     
     case AssetType.EURO:
-      unitValue = amount ? amount * assetPrices.EURO : 0;
+      if (!quantity || !dateReceived) return 0;
+      try {
+        // Get EUR exchange rate from database
+        const exchangeRate = await getExchangeRate('eur_exchange_rates', dateReceived);
+        unitValue = quantity * exchangeRate;
+      } catch (error) {
+        console.error('Error getting EUR exchange rate:', error);
+        // Fallback to mock price if database lookup fails
+        unitValue = quantity * assetPrices.EURO;
+      }
       break;
     
     default:
       unitValue = 0;
   }
   
-  return unitValue * quantity;
+  return unitValue;
 };
 
 // POST /api/assets - Create a new asset
@@ -186,7 +264,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Ensure quantity is at least 1
-    const quantity = data.quantity && parseInt(data.quantity) > 0 ? parseInt(data.quantity) : 1;
+    const quantity = data.quantity && parseFloat(data.quantity) > 0 ? parseFloat(data.quantity) : 1;
     
     // Validate asset type-specific fields
     if (
@@ -203,7 +281,7 @@ export async function POST(request: NextRequest) {
       (data.type === AssetType.TURKISH_LIRA || 
        data.type === AssetType.DOLLAR || 
        data.type === AssetType.EURO) &&
-      !data.amount
+      !data.quantity
     ) {
       return NextResponse.json(
         { error: "Para birimleri için miktar alanı zorunludur." },
@@ -240,7 +318,6 @@ export async function POST(request: NextRequest) {
     const calculatedValue = await calculateAssetValue(
       data.type,
       quantity,
-      data.amount, 
       data.grams, 
       data.carat,
       dateReceived

@@ -23,7 +23,7 @@ export type Asset = {
   userId: string;
   assetTypeId: string;
   assetType: AssetTypeInfo;
-  amount?: number | null;
+  quantity: number;
   grams?: number | null;
   carat?: number | null;
   initialValue: number;
@@ -54,7 +54,7 @@ export type User = {
 // Type definitions for form validation
 export type AssetFormData = {
   type: AssetType;
-  amount?: number;
+  quantity?: number;
   grams?: number;
   carat?: number;
   initialValue: number;

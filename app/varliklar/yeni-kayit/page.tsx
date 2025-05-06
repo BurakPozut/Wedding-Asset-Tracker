@@ -59,12 +59,14 @@ export default function IntegratedAddPage() {
     }
     
     // Validate asset type-specific fields
-    if (showMoneyFields && !amount) {
-      setError("Para birimleri için miktar alanı zorunludur.");
-      return false;
-    }
-    
-    if (showGoldFields) {
+    if (showMoneyFields) {
+      // For money/currency fields
+      if (!amount) {
+        setError("Para birimleri için miktar alanı zorunludur.");
+        return false;
+      }
+    } else if (showGoldFields) {
+      // For gold fields that need grams and carat
       if (!grams) {
         setError("Gram alanı zorunludur.");
         return false;
@@ -72,6 +74,12 @@ export default function IntegratedAddPage() {
       
       if (!carat) {
         setError("Karat/Ayar seçmelisiniz.");
+        return false;
+      }
+    } else {
+      // Standard gold items like CEYREK_ALTIN that only need quantity
+      if (quantity < 1) {
+        setError("Adet en az 1 olmalıdır.");
         return false;
       }
     }
@@ -111,20 +119,22 @@ export default function IntegratedAddPage() {
       const donor = await donorResponse.json();
       
       // 2. Create asset
+      // For currency assets, we use the quantity directly
+      const assetData = {
+        type: assetType,
+        quantity: showMoneyFields ? amount : quantity,
+        grams,
+        carat,
+        dateReceived,
+        donorId: donor.id,
+      };
+      
       const assetResponse = await fetch("/api/assets", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          type: assetType,
-          quantity,
-          amount,
-          grams,
-          carat,
-          dateReceived,
-          donorId: donor.id,
-        }),
+        body: JSON.stringify(assetData),
       });
       
       if (!assetResponse.ok) {
@@ -279,27 +289,32 @@ export default function IntegratedAddPage() {
                 </div>
               </div>
               
-              <div className="mt-4">
-                <label htmlFor="quantity" className="block text-sm font-medium leading-6 text-gray-900">
-                  Adet
-                </label>
-                <div className="mt-2">
-                  <input
-                    id="quantity"
-                    name="quantity"
-                    type="number"
-                    min="1"
-                    value={quantity}
-                    onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                    className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                  />
+              {/* Only show Quantity field for non-currency assets */}
+              {!showMoneyFields && (
+                <div className="mt-4">
+                  <label htmlFor="quantity" className="block text-sm font-medium leading-6 text-gray-900">
+                    Adet
+                  </label>
+                  <div className="mt-2">
+                    <input
+                      id="quantity"
+                      name="quantity"
+                      type="number"
+                      min="1"
+                      value={quantity}
+                      onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                      className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
               
               {showMoneyFields && (
                 <div className="mt-4">
                   <label htmlFor="amount" className="block text-sm font-medium leading-6 text-gray-900">
-                    Miktar
+                    {assetType === AssetType.TURKISH_LIRA ? "Miktar (TL)" : 
+                     assetType === AssetType.DOLLAR ? "Miktar ($)" : 
+                     "Miktar (€)"}
                   </label>
                   <div className="mt-2">
                     <input
@@ -312,6 +327,9 @@ export default function IntegratedAddPage() {
                       onChange={(e) => setAmount(parseFloat(e.target.value) || undefined)}
                       className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                     />
+                    <p className="mt-1 text-sm text-gray-500">
+                      Para birimi değeri doğrudan girilir, adet belirtmeye gerek yoktur.
+                    </p>
                   </div>
                 </div>
               )}

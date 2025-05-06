@@ -80,7 +80,7 @@ export function AssetTable({ assets, onDelete }: AssetTableProps) {
                   ) : (asset.assetType?.type === AssetType.TURKISH_LIRA || 
                          asset.assetType?.type === AssetType.DOLLAR || 
                          asset.assetType?.type === AssetType.EURO) ? (
-                    <>{asset.amount} {
+                    <>{asset.quantity} {
                       asset.assetType?.type === AssetType.TURKISH_LIRA ? "TL" :
                       asset.assetType?.type === AssetType.DOLLAR ? "USD" : "EUR"
                     }</>

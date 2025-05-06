@@ -25,7 +25,7 @@ const assetTypeNames: Record<string, string> = {
 
 export function AssetForm({ initialData, donors, onSubmit, isSubmitting = false }: AssetFormProps) {
   const [type, setType] = useState<AssetType>(initialData?.assetType?.type || AssetType.CEYREK_ALTIN);
-  const [amount, setAmount] = useState<number | undefined>(initialData?.amount || undefined);
+  const [quantity, setQuantity] = useState<number | undefined>(initialData?.quantity || undefined);
   const [grams, setGrams] = useState<number | undefined>(initialData?.grams || undefined);
   const [carat, setCarat] = useState<number | undefined>(initialData?.carat || undefined);
   const [initialValue, setInitialValue] = useState<number>(initialData?.initialValue || 0);
@@ -41,12 +41,12 @@ export function AssetForm({ initialData, donors, onSubmit, isSubmitting = false 
   // Reset fields based on asset type
   useEffect(() => {
     if (type === AssetType.BILEZIK || type === AssetType.GRAM_GOLD) {
-      setAmount(undefined);
+      setQuantity(undefined);
     } else if (type === AssetType.TURKISH_LIRA || type === AssetType.DOLLAR || type === AssetType.EURO) {
       setGrams(undefined);
       setCarat(undefined);
     } else {
-      setAmount(undefined);
+      setQuantity(undefined);
       setGrams(undefined);
       setCarat(undefined);
     }
@@ -70,7 +70,7 @@ export function AssetForm({ initialData, donors, onSubmit, isSubmitting = false 
     }
     
     if (type === AssetType.TURKISH_LIRA || type === AssetType.DOLLAR || type === AssetType.EURO) {
-      if (!amount) {
+      if (!quantity) {
         setValidationError("Para birimleri için miktar alanı zorunludur.");
         return;
       }
@@ -83,7 +83,7 @@ export function AssetForm({ initialData, donors, onSubmit, isSubmitting = false 
     
     const formData: AssetFormData = {
       type,
-      amount,
+      quantity,
       grams,
       carat,
       initialValue,
@@ -138,18 +138,18 @@ export function AssetForm({ initialData, donors, onSubmit, isSubmitting = false 
       
       {showMoneyFields && (
         <div>
-          <label htmlFor="amount" className="block text-sm font-medium leading-6 text-gray-900">
+          <label htmlFor="quantity" className="block text-sm font-medium leading-6 text-gray-900">
             Miktar
           </label>
           <div className="mt-2">
             <input
-              id="amount"
-              name="amount"
+              id="quantity"
+              name="quantity"
               type="number"
               step="0.01"
               min="0"
-              value={amount || ""}
-              onChange={(e) => setAmount(parseFloat(e.target.value) || undefined)}
+              value={quantity || ""}
+              onChange={(e) => setQuantity(parseFloat(e.target.value) || undefined)}
               className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
             />
           </div>
