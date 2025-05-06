@@ -138,7 +138,6 @@ export async function PUT(
         grams: data.grams !== undefined ? data.grams : undefined,
         carat: data.carat !== undefined ? data.carat : undefined,
         initialValue: data.initialValue !== undefined ? data.initialValue : undefined,
-        currentValue: data.currentValue !== undefined ? data.currentValue : undefined,
         dateReceived: data.dateReceived ? new Date(data.dateReceived) : undefined,
         donorId: data.donorId !== undefined ? data.donorId : undefined,
       },
@@ -173,6 +172,7 @@ export async function DELETE(
     // Check if the asset exists and belongs to the user
     const existingAsset = await prisma.asset.findUnique({
       where: { id: params.id },
+      include: { donor: true },
     });
     
     if (!existingAsset) {
@@ -189,10 +189,25 @@ export async function DELETE(
       );
     }
     
+    // Get the donor ID before deleting the asset
+    const donorId = existingAsset.donorId;
+    
     // Delete the asset
     await prisma.asset.delete({
       where: { id: params.id },
     });
+    
+    // Check if this was the donor's last asset
+    const remainingAssets = await prisma.asset.count({
+      where: { donorId: donorId },
+    });
+    
+    // If no assets remain for this donor, delete the donor as well
+    if (remainingAssets === 0) {
+      await prisma.donor.delete({
+        where: { id: donorId },
+      });
+    }
     
     return NextResponse.json({ success: true });
   } catch (error) {

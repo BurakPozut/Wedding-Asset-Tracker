@@ -19,8 +19,8 @@ async function updateGoldPrices() {
     const currentDate = new Date();
     
     // Extract prices for GRAMALTIN (gram gold) and CEYREKALTIN (quarter gold)
-    const gramGoldPrice = data.Rates.GRA?.Selling;
-    const ceyrekGoldPrice = data.Rates.CEYREKALTIN?.Selling;
+    const gramGoldPrice = data.Rates.GRA?.Buying;
+    const ceyrekGoldPrice = data.Rates.CEYREKALTIN?.Buying;
     
     if (!gramGoldPrice) {
       throw new Error('Gram gold price not found in API response');

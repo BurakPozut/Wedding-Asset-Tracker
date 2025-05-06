@@ -37,12 +37,10 @@ export async function GET() {
 
 // Mock price data - would be fetched from external API in production
 const assetPrices = {
-  CEYREK_ALTIN: 7500,    // Value in TRY per unit
   TAM_ALTIN: 15000,      // Value in TRY per unit
   RESAT: 19000,          // Value in TRY per unit
   BESI_BIR_YERDE: 35000, // Value in TRY per unit
   BILEZIK: 6500,         // Value in TRY per gram for 24K
-  GRAM_GOLD: 2200,       // Value in TRY per gram for 24K
   TURKISH_LIRA: 1,       // TRY to TRY exchange rate (1:1)
   DOLLAR: 33,            // USD to TRY exchange rate
   EURO: 36,              // EUR to TRY exchange rate
@@ -92,10 +90,11 @@ const calculateAssetValue = async (
         }
         
         // If still no price found, use fallback mock price
-        unitValue = goldPrice ? parseFloat(goldPrice.bid_price.toString()) : assetPrices.CEYREK_ALTIN;
-      } else {
-        unitValue = assetPrices.CEYREK_ALTIN;
-      }
+        if (!goldPrice) {
+          throw new Error("No gold price found for the given date or any previous date");
+        }
+        unitValue = parseFloat(goldPrice.bid_price.toString());
+      } 
       break;
     
     case AssetType.TAM_ALTIN:
@@ -117,7 +116,32 @@ const calculateAssetValue = async (
     
     case AssetType.GRAM_GOLD:
       if (!grams || !carat) return 0;
-      unitValue = grams * getGoldValueByKarat(carat, assetPrices.GRAM_GOLD);
+      if (dateReceived) {
+        // Format date to match the format in the DB (YYYY-MM-DD)
+        const formattedDate = dateReceived.toISOString().split('T')[0];
+        
+        // Try to find a price from the gram_gold_prices table for the exact date
+        let goldPrice = await prisma.gram_gold_prices.findFirst({
+          where: { price_date: new Date(formattedDate) },
+          select: { bid_price: true }
+        });
+        
+        // If no price found for exact date, get the closest previous price
+        if (!goldPrice) {
+          goldPrice = await prisma.gram_gold_prices.findFirst({
+            where: { price_date: { lte: new Date(formattedDate) } },
+            orderBy: { price_date: 'desc' },
+            select: { bid_price: true }
+          });
+        }
+        
+        // If still no price found, use fallback mock price
+        if (!goldPrice) {
+          throw new Error("No gram gold price found for the given date or any previous date");
+        }
+        const baseValue = parseFloat(goldPrice.bid_price.toString());
+        unitValue = grams * getGoldValueByKarat(carat, baseValue);
+      } 
       break;
     
     case AssetType.TURKISH_LIRA:
@@ -243,9 +267,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(asset);
   } catch (error) {
     console.error("Asset creation error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Varlık değeri hesaplanamadı.";
     return NextResponse.json(
-      { error: "Varlık oluşturulurken bir hata oluştu." },
-      { status: 500 }
+      { error: errorMessage },
+      { status: 400 }
     );
   }
 } 

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "../api/auth/[...nextauth]/route";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { calculatePortfolioChange, formatCurrency, formatPercentage } from "@/lib/portfolio";
 
 // Map AssetType to Turkish display name
 const assetTypeNames: Record<string, string> = {
@@ -40,6 +41,9 @@ export default async function Dashboard() {
   
   // Calculate total value
   const totalValue = assets.reduce((sum, asset) => sum + asset.initialValue, 0);
+  
+  // Calculate portfolio change
+  const portfolioChange = calculatePortfolioChange(assets);
   
   // Calculate side distribution
   const sideDistribution = {
@@ -91,11 +95,6 @@ export default async function Dashboard() {
     date: asset.dateReceived.toISOString().split('T')[0],
   }));
   
-  // Format currency
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(value);
-  };
-  
   return (
     <div>
       <div className="mb-8">
@@ -106,7 +105,7 @@ export default async function Dashboard() {
       </div>
       
       {/* Stats */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
         <div className="bg-white overflow-hidden shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <dt className="text-sm font-medium text-gray-500 truncate">Toplam Varlık</dt>
@@ -125,6 +124,24 @@ export default async function Dashboard() {
           <div className="px-4 py-5 sm:p-6">
             <dt className="text-sm font-medium text-gray-500 truncate">Toplam Bağışçı</dt>
             <dd className="mt-1 text-3xl font-semibold text-gray-900">{donors.length}</dd>
+          </div>
+        </div>
+        
+        <div className={`bg-white overflow-hidden shadow rounded-lg ${
+          portfolioChange.isProfit ? 'border-green-200' : 'border-red-200'
+        } border-2`}>
+          <div className="px-4 py-5 sm:p-6">
+            <dt className="text-sm font-medium text-gray-500 truncate">Portföy Değişimi</dt>
+            <dd className={`mt-1 text-3xl font-semibold ${
+              portfolioChange.isProfit ? 'text-green-600' : 'text-red-600'
+            }`}>
+              {formatCurrency(portfolioChange.changeAmount)}
+            </dd>
+            <p className={`text-sm ${
+              portfolioChange.isProfit ? 'text-green-600' : 'text-red-600'
+            }`}>
+              {formatPercentage(portfolioChange.changePercentage)}
+            </p>
           </div>
         </div>
       </div>

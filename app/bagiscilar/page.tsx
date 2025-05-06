@@ -10,6 +10,8 @@ export default function DonorsPage() {
   const [donors, setDonors] = useState<Donor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredDonors, setFilteredDonors] = useState<Donor[]>([]);
   
   useEffect(() => {
     const fetchDonors = async () => {
@@ -25,6 +27,7 @@ export default function DonorsPage() {
         
         const data = await response.json();
         setDonors(data);
+        setFilteredDonors(data);
       } catch (err) {
         console.error("Bağışçıları getirme hatası:", err);
         setError("Bağışçılar yüklenirken bir hata oluştu. Lütfen tekrar deneyin.");
@@ -36,10 +39,27 @@ export default function DonorsPage() {
     fetchDonors();
   }, []);
   
-  // Group donors by type
-  const groomSideDonors = donors.filter(donor => donor.isGroomSide);
-  const brideSideDonors = donors.filter(donor => donor.isBrideSide);
-  const otherDonors = donors.filter(donor => !donor.isGroomSide && !donor.isBrideSide);
+  // Filter donors when search term changes
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setFilteredDonors(donors);
+    } else {
+      const lowercaseSearch = searchTerm.toLowerCase().trim();
+      const filtered = donors.filter(donor => 
+        donor.name.toLowerCase().includes(lowercaseSearch)
+      );
+      setFilteredDonors(filtered);
+    }
+  }, [searchTerm, donors]);
+  
+  // Group filtered donors by type
+  const groomSideDonors = filteredDonors.filter(donor => donor.isGroomSide);
+  const brideSideDonors = filteredDonors.filter(donor => donor.isBrideSide);
+  const otherDonors = filteredDonors.filter(donor => !donor.isGroomSide && !donor.isBrideSide);
+  
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
   
   return (
     <div>
@@ -59,6 +79,24 @@ export default function DonorsPage() {
               Yeni Bağışçı Ekle
             </Button>
           </Link>
+        </div>
+      </div>
+      
+      {/* Search Box */}
+      <div className="mb-6">
+        <div className="relative rounded-md shadow-sm">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+            <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <input
+            type="text"
+            className="block w-full rounded-md border-0 py-3 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"
+            placeholder="Bağışçı ara..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+          />
         </div>
       </div>
       
@@ -82,14 +120,22 @@ export default function DonorsPage() {
             </div>
           </div>
         </div>
-      ) : donors.length === 0 ? (
+      ) : filteredDonors.length === 0 ? (
         <div className="text-center py-8 bg-white shadow rounded-lg">
-          <p className="text-gray-700">Henüz hiç bağışçı eklenmemiş.</p>
-          <p className="mt-4">
-            <Link href="/bagiscilar/ekle" className="text-indigo-600 hover:text-indigo-500">
-              İlk bağışçınızı ekleyin
-            </Link>
-          </p>
+          {donors.length === 0 ? (
+            <>
+              <p className="text-gray-700">Henüz hiç bağışçı eklenmemiş.</p>
+              <p className="mt-4">
+                <Link href="/bagiscilar/ekle" className="text-indigo-600 hover:text-indigo-500">
+                  İlk bağışçınızı ekleyin
+                </Link>
+              </p>
+            </>
+          ) : (
+            <p className="text-gray-700">
+              &ldquo;{searchTerm}&rdquo; için sonuç bulunamadı. Lütfen başka bir arama terimi deneyin.
+            </p>
+          )}
         </div>
       ) : (
         <div className="space-y-8">

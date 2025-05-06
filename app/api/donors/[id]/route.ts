@@ -12,9 +12,13 @@ type RouteParams = {
 // GET /api/donors/[id] - Get a specific donor and their assets
 export async function GET(
   _request: NextRequest,
-  { params }: RouteParams
+  routeParams: RouteParams
 ) {
   try {
+    // Await/unwrap params before using
+    const params = await routeParams.params;
+    const id = params.id;
+    
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.id) {
@@ -25,8 +29,15 @@ export async function GET(
     }
     
     const donor = await prisma.donor.findUnique({
-      where: { id: params.id },
-      include: { assets: true },
+      where: { id },
+      include: { 
+        assets: {
+          include: {
+            assetType: true,
+            donor: true
+          }
+        } 
+      },
     });
     
     if (!donor) {

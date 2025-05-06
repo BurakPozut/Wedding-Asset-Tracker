@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Asset } from "@/types";
 import { AssetTable } from "@/components/asset/asset-table";
+import { AssetSummary } from "@/components/asset/asset-summary";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -96,11 +97,17 @@ export default function AssetsPage() {
           </div>
         </div>
       ) : (
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <AssetTable assets={assets} onDelete={handleDeleteAsset} />
+        <>
+          {/* Asset Summary */}
+          {assets.length > 0 && <AssetSummary assets={assets} />}
+          
+          {/* Asset Table */}
+          <div className="bg-white shadow rounded-lg">
+            <div className="px-4 py-5 sm:p-6">
+              <AssetTable assets={assets} onDelete={handleDeleteAsset} />
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
