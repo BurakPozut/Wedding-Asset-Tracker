@@ -8,6 +8,7 @@ import { calculatePortfolioChange, formatCurrency, formatPercentage } from "@/li
 // Map AssetType to Turkish display name
 const assetTypeNames: Record<string, string> = {
   CEYREK_ALTIN: "Çeyrek Altın",
+  YARIM_ALTIN: "Yarım Altın",
   TAM_ALTIN: "Tam Altın",
   RESAT: "Reşat",
   BESI_BIR_YERDE: "Beşi Bir Yerde",

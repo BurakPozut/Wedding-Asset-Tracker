@@ -16,6 +16,7 @@ type ExtendedAsset = Asset & {
 const assetTypeNames: Record<string, string> = {
   CEYREK_ALTIN: "Çeyrek Altın",
   TAM_ALTIN: "Tam Altın",
+  YARIM_ALTIN: "Yarım Altın",
   RESAT: "Reşat",
   BESI_BIR_YERDE: "Beşi Bir Yerde",
   BILEZIK: "Bilezik",

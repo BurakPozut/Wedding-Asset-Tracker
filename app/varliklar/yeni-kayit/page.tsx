@@ -10,6 +10,7 @@ import { useWeddingDate } from "@/context/wedding-date-context";
 // Map AssetType to Turkish display name
 const assetTypeNames: Record<string, string> = {
   CEYREK_ALTIN: "Çeyrek Altın",
+  YARIM_ALTIN: "Yarım Altın",
   TAM_ALTIN: "Tam Altın",
   RESAT: "Reşat",
   BESI_BIR_YERDE: "Beşi Bir Yerde",
@@ -392,9 +393,9 @@ export default function IntegratedAddPage() {
                   onChange={(e) => setDateReceived(e.target.value)}
                   className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
-                {assetType === AssetType.CEYREK_ALTIN && (
+                {(assetType === AssetType.CEYREK_ALTIN || assetType === AssetType.YARIM_ALTIN || assetType === AssetType.TAM_ALTIN) && (
                   <p className="mt-1 text-sm text-gray-500">
-                    Çeyrek Altın değeri seçilen tarihe göre otomatik hesaplanacaktır.
+                    Altın değeri seçilen tarihe göre otomatik hesaplanacaktır.
                   </p>
                 )}
               </div>

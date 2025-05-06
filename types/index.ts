@@ -1,6 +1,7 @@
 // Define AssetType enum to match Prisma schema
 export enum AssetType {
   CEYREK_ALTIN = "CEYREK_ALTIN",
+  YARIM_ALTIN = "YARIM_ALTIN",
   TAM_ALTIN = "TAM_ALTIN",
   RESAT = "RESAT",
   BESI_BIR_YERDE = "BESI_BIR_YERDE",

@@ -135,6 +135,7 @@ model eur_exchange_rates {
 
 enum AssetType {
   CEYREK_ALTIN
+  YARIM_ALTIN
   TAM_ALTIN
   RESAT
   BESI_BIR_YERDE

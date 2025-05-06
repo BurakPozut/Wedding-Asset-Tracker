@@ -81,6 +81,34 @@ const calculateAssetValue = async (
 ): Promise<number> => {
   let unitValue = 0;
   
+  // Helper function to get gold price from cey_gold_prices for a given date
+  const getCeyrekAltinPrice = async (date: Date): Promise<number> => {
+    // Format date to match the format in the DB (YYYY-MM-DD)
+    const formattedDate = date.toISOString().split('T')[0];
+    
+    // Try to find a price for the exact date
+    let goldPrice = await prisma.cey_gold_prices.findFirst({
+      where: { price_date: new Date(formattedDate) },
+      select: { bid_price: true }
+    });
+    
+    // If no price found for exact date, get the closest previous price
+    if (!goldPrice) {
+      goldPrice = await prisma.cey_gold_prices.findFirst({
+        where: { price_date: { lte: new Date(formattedDate) } },
+        orderBy: { price_date: 'desc' },
+        select: { bid_price: true }
+      });
+    }
+    
+    // If still no price found, throw an error
+    if (!goldPrice) {
+      throw new Error("No gold price found for the given date or any previous date");
+    }
+    
+    return parseFloat(goldPrice.bid_price.toString());
+  };
+  
   // Helper function to get the exchange rate from database for a given date
   const getExchangeRate = async (tableName: 'usd_exchange_rates' | 'eur_exchange_rates', date: Date): Promise<number> => {
     // Format date to match the format in the DB (YYYY-MM-DD)
@@ -131,34 +159,27 @@ const calculateAssetValue = async (
   switch (type) {
     case AssetType.CEYREK_ALTIN:
       if (dateReceived) {
-        // Format date to match the format in the DB (YYYY-MM-DD)
-        const formattedDate = dateReceived.toISOString().split('T')[0];
-        
-        // Try to find a price from the cey_gold_prices table for the exact date
-        let goldPrice = await prisma.cey_gold_prices.findFirst({
-          where: { price_date: new Date(formattedDate) },
-          select: { bid_price: true }
-        });
-        
-        // If no price found for exact date, get the closest previous price
-        if (!goldPrice) {
-          goldPrice = await prisma.cey_gold_prices.findFirst({
-            where: { price_date: { lte: new Date(formattedDate) } },
-            orderBy: { price_date: 'desc' },
-            select: { bid_price: true }
-          });
-        }
-        
-        // If still no price found, use fallback mock price
-        if (!goldPrice) {
-          throw new Error("No gold price found for the given date or any previous date");
-        }
-        unitValue = parseFloat(goldPrice.bid_price.toString());
+        // Get the price directly using the helper function
+        unitValue = await getCeyrekAltinPrice(dateReceived);
       } 
       break;
     
     case AssetType.TAM_ALTIN:
-      unitValue = assetPrices.TAM_ALTIN;
+      if (dateReceived) {
+        // TAM_ALTIN is 4x the price of CEYREK_ALTIN
+        const ceyrekPrice = await getCeyrekAltinPrice(dateReceived);
+        unitValue = ceyrekPrice * 4;
+      } else {
+        unitValue = assetPrices.TAM_ALTIN;
+      }
+      break;
+      
+    case AssetType.YARIM_ALTIN:
+      if (dateReceived) {
+        // YARIM_ALTIN is 2x the price of CEYREK_ALTIN
+        const ceyrekPrice = await getCeyrekAltinPrice(dateReceived);
+        unitValue = ceyrekPrice * 2;
+      }
       break;
     
     case AssetType.RESAT:
