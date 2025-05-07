@@ -61,3 +61,4 @@ import_historical_data.py
 TCMB_Doviz_Kurlari_Arsiv_2020-01-01_2025-05-06.csv
 update_asset_prices.py
 python/
+prisma/backup/

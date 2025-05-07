@@ -1,39 +1,28 @@
-import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";
-import { AuthProvider } from "@/providers/auth-provider";
+import { Providers } from "./providers";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { WeddingDateProvider } from "@/context/wedding-date-context";
+import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
-  title: "Düğün Hediye Takibi",
-  description: "Düğünde alınan altın ve para hediyeleri takip etmek için uygulama",
-};
-
-export default function RootLayout({
+export default async function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="tr" className="light">
-      <body className={`${inter.className} bg-white text-gray-900`}>
-        <AuthProvider>
-          <WeddingDateProvider>
-            <div className="flex min-h-screen flex-col bg-gray-50">
-              <Header />
-              <main className="flex-grow">
-                <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                  {children}
-                </div>
-              </main>
-              <Footer />
-            </div>
-          </WeddingDateProvider>
-        </AuthProvider>
+    <html lang="tr">
+      <body className={inter.className}>
+        <Providers>
+          <div className="min-h-screen flex flex-col">
+            <Header />
+            <main className="flex-1 container mx-auto px-4 py-8">
+              {children}
+            </main>
+            <Footer />
+          </div>
+        </Providers>
       </body>
     </html>
   );

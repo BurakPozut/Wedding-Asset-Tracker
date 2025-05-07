@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Düğünde alınan altın ve para hediyelerini takip etmek için uygulama",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

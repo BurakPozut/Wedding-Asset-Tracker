@@ -46,22 +46,50 @@ model VerificationToken {
 }
 
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
+  id            String          @id @default(uuid())
+  email         String          @unique
   name          String?
-  createdAt     DateTime  @default(now())
+  createdAt     DateTime        @default(now())
   emailVerified DateTime?
   image         String?
-  weddingDate   DateTime?
   accounts      Account[]
-  assets        Asset[]
-  donors        Donor[]
   sessions      Session[]
+  weddings      WeddingMember[]
+}
+
+model Wedding {
+  id          String         @id @default(uuid())
+  name        String         // e.g., "John & Jane's Wedding"
+  date        DateTime?      // Made optional
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  members     WeddingMember[]
+  assets      Asset[]
+  donors      Donor[]
+}
+
+model WeddingMember {
+  id        String      @id @default(uuid())
+  weddingId String
+  userId    String
+  role      WeddingRole
+  createdAt DateTime    @default(now())
+  wedding   Wedding     @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([weddingId, userId])
+  @@index([weddingId])
+  @@index([userId])
+}
+
+enum WeddingRole {
+  ADMIN
+  VIEWER
 }
 
 model Asset {
   id           String        @id @default(uuid())
-  userId       String
+  weddingId    String
   grams        Float?
   carat        Int?
   initialValue Float
@@ -73,9 +101,9 @@ model Asset {
   assetTypeId  String
   assetType    AssetTypeInfo @relation(fields: [assetTypeId], references: [id])
   donor        Donor         @relation(fields: [donorId], references: [id], onDelete: Cascade)
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wedding      Wedding       @relation(fields: [weddingId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
+  @@index([weddingId])
   @@index([donorId])
   @@index([assetTypeId])
 }
@@ -90,15 +118,15 @@ model AssetTypeInfo {
 
 model Donor {
   id          String   @id @default(uuid())
-  userId      String
+  weddingId   String
   name        String
   isGroomSide Boolean  @default(false)
   isBrideSide Boolean  @default(false)
   createdAt   DateTime @default(now())
   assets      Asset[]
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wedding     Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
+  @@index([weddingId])
 }
 
 model gram_gold_prices {
