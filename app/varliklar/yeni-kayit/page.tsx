@@ -7,6 +7,17 @@ import { AssetType } from "@/types";
 import Link from "next/link";
 import { useWeddingDate } from "@/context/wedding-date-context";
 import { ASSET_TYPE_NAMES, CURRENCY_ASSETS, GRAM_REQUIRED_ASSETS } from "@/lib/constants";
+import dynamic from 'next/dynamic';
+import type { GroupBase, SingleValue } from 'react-select';
+
+const Select = dynamic(() => import('react-select'), {
+  ssr: false
+}) as typeof import('react-select').default;
+
+type AssetTypeOption = {
+  value: AssetType;
+  label: string;
+};
 
 export default function IntegratedAddPage() {
   const router = useRouter();
@@ -251,30 +262,32 @@ export default function IntegratedAddPage() {
                   Hediye Türü
                 </label>
                 <div className="mt-2">
-                  <select
+                  <Select<AssetTypeOption, false, GroupBase<AssetTypeOption>>
                     id="assetType"
                     name="assetType"
-                    value={assetType}
-                    onChange={(e) => {
-                      setAssetType(e.target.value as AssetType);
-                      // Reset fields when type changes
-                      if (GRAM_REQUIRED_ASSETS.includes(e.target.value as AssetType)) {
-                        setAmount(undefined);
-                      } else if (CURRENCY_ASSETS.includes(e.target.value as AssetType)) {
-                        setGrams(undefined);
-                      } else {
-                        setAmount(undefined);
-                        setGrams(undefined);
+                    value={{ value: assetType, label: ASSET_TYPE_NAMES[assetType] }}
+                    onChange={(selectedOption: SingleValue<AssetTypeOption>) => {
+                      if (selectedOption) {
+                        setAssetType(selectedOption.value);
+                        // Reset fields when type changes
+                        if (GRAM_REQUIRED_ASSETS.includes(selectedOption.value)) {
+                          setAmount(undefined);
+                        } else if (CURRENCY_ASSETS.includes(selectedOption.value)) {
+                          setGrams(undefined);
+                        } else {
+                          setAmount(undefined);
+                          setGrams(undefined);
+                        }
                       }
                     }}
-                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                  >
-                    {Object.entries(ASSET_TYPE_NAMES).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
+                    options={Object.entries(ASSET_TYPE_NAMES).map(([value, label]) => ({
+                      value: value as AssetType,
+                      label
+                    }))}
+                    className="react-select-container"
+                    classNamePrefix="react-select"
+                    isSearchable={true}
+                  />
                 </div>
               </div>
               
