@@ -54,7 +54,6 @@ const assetPrices = {
   TAM_ALTIN: 15000,      // Value in TRY per unit
   RESAT: 19000,          // Value in TRY per unit
   BESI_BIR_YERDE: 35000, // Value in TRY per unit
-  BILEZIK: 6500,         // Value in TRY per gram for 24K
   TURKISH_LIRA: 1,       // TRY to TRY exchange rate (1:1)
   DOLLAR: 33,            // USD to TRY exchange rate
   EURO: 36,              // EUR to TRY exchange rate
@@ -183,7 +182,13 @@ const calculateAssetValue = async (
       break;
     
     case AssetType.BESI_BIR_YERDE:
-      unitValue = assetPrices.BESI_BIR_YERDE;
+      if (dateReceived) {
+        // BESI_BIR_YERDE is 20x the price of CEYREK_ALTIN
+        const ceyrekPrice = await getCeyrekAltinPrice(dateReceived);
+        unitValue = ceyrekPrice * 20;
+      } else {
+        unitValue = assetPrices.BESI_BIR_YERDE;
+      }
       break;
     
     case AssetType.BILEZIK:
