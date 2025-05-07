@@ -241,16 +241,6 @@ export default async function Dashboard() {
           </svg>
           Yeni Kayıt Ekle
         </Link>
-        
-        <Link 
-          href="/varliklar/ekle"
-          className="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-        >
-          <svg className="-ml-0.5 mr-1.5 h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
-          </svg>
-          Varlık Ekle
-        </Link>
       </div>
     </div>
   );
