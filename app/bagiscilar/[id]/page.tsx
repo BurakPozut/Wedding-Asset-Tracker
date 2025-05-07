@@ -160,7 +160,7 @@ export default function DonorDetailPage() {
             <div className="px-4 py-5 sm:p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium leading-6 text-gray-900">Bağışçının Varlıkları</h3>
-                <Link href={`/varliklar/ekle?donorId=${donor.id}`} className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                <Link href={`/varliklar/yeni-kayit?donorId=${donor.id}`} className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
                   Varlık Ekle
                 </Link>
               </div>
