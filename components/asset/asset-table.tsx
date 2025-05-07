@@ -10,6 +10,40 @@ type AssetTableProps = {
   onDelete?: (assetId: string) => void;
 };
 
+// Calculate gold value based on karat
+const getGoldValueByKarat = (caratValue: number, baseValue: number): number => {
+  switch (caratValue) {
+    case 24: return baseValue;       // 24K = 100% of value
+    case 22: return baseValue * 0.92; // 22K = 92% of value
+    case 18: return baseValue * 0.75; // 18K = 75% of value
+    case 14: return baseValue * 0.58; // 14K = 58% of value
+    default: return baseValue * 0.75; // Default to 18K if unknown
+  }
+};
+
+// Calculate current value based on asset type and properties
+const calculateCurrentValue = (asset: Asset): number => {
+  if (!asset.assetType?.currentValue) return 0;
+  
+  const baseValue = asset.assetType.currentValue;
+  
+  if (asset.assetType.type === AssetType.BILEZIK || asset.assetType.type === AssetType.GRAM_GOLD) {
+    if (asset.carat) {
+      const adjustedValue = getGoldValueByKarat(asset.carat, baseValue);
+      return adjustedValue * (asset.grams || 0);
+    }
+    return baseValue * (asset.grams || 0);
+  }
+  
+  if (asset.assetType.type === AssetType.TURKISH_LIRA || 
+      asset.assetType.type === AssetType.DOLLAR || 
+      asset.assetType.type === AssetType.EURO) {
+    return baseValue * (asset.quantity || 1);
+  }
+  
+  return baseValue * (asset.quantity || 1);
+};
+
 export function AssetTable({ assets, onDelete }: AssetTableProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   
@@ -81,7 +115,7 @@ export function AssetTable({ assets, onDelete }: AssetTableProps) {
                   {formatCurrency(asset.initialValue)}
                 </td>
                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                  {asset.assetType?.currentValue ? formatCurrency(asset.assetType.currentValue) : "-"}
+                  {formatCurrency(calculateCurrentValue(asset))}
                 </td>
                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                   {asset.donor?.name || "-"}

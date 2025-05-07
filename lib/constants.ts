@@ -7,7 +7,6 @@ export const ASSET_TYPE_NAMES: Record<AssetType, string> = {
   [AssetType.TAM_ALTIN]: "Tam Altın",
   [AssetType.RESAT_ALTIN]: "Reşat Altın",
   [AssetType.CUMHURIYET_ALTIN]: "Cumhuriyet Altını",
-  [AssetType.GRAM_ALTIN_22K]: "22 Ayar Gram Altın",
   [AssetType.BESI_BIR_YERDE]: "Beşi Bir Yerde",
   [AssetType.BILEZIK]: "Bilezik",
   [AssetType.GRAM_GOLD]: "Gram Altın",
@@ -20,7 +19,6 @@ export const ASSET_TYPE_NAMES: Record<AssetType, string> = {
 export const GRAM_REQUIRED_ASSETS = [
   AssetType.BILEZIK,
   AssetType.GRAM_GOLD,
-  AssetType.GRAM_ALTIN_22K,
 ];
 
 // Asset types that are currencies
