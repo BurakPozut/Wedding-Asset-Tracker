@@ -2,6 +2,7 @@
 
 import { Asset, AssetType } from "@/types";
 import { useMemo } from "react";
+import { ASSET_TYPE_NAMES } from "@/lib/constants";
 
 type AssetSummaryProps = {
   assets: Asset[];
@@ -10,20 +11,6 @@ type AssetSummaryProps = {
 // Extended Asset type with quantity
 type ExtendedAsset = Asset & {
   quantity?: number;
-};
-
-// Map AssetType to Turkish display name
-const assetTypeNames: Record<string, string> = {
-  CEYREK_ALTIN: "Çeyrek Altın",
-  TAM_ALTIN: "Tam Altın",
-  YARIM_ALTIN: "Yarım Altın",
-  RESAT: "Reşat",
-  BESI_BIR_YERDE: "Beşi Bir Yerde",
-  BILEZIK: "Bilezik",
-  GRAM_GOLD: "Gram Altın",
-  TURKISH_LIRA: "Türk Lirası",
-  DOLLAR: "Dolar",
-  EURO: "Euro",
 };
 
 type AssetTypeStats = {
@@ -58,7 +45,7 @@ export function AssetSummary({ assets }: AssetSummaryProps) {
       if (!asset.assetType?.type) continue;
       
       const type = asset.assetType.type;
-      const displayName = assetTypeNames[type] || type;
+      const displayName = ASSET_TYPE_NAMES[type] || type;
       const currentUnitValue = asset.assetType.currentValue || 0;
       
       if (!statsByType.has(type)) {

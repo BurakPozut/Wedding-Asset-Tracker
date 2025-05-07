@@ -3,24 +3,13 @@
 import { useState, useEffect } from "react";
 import { Asset, AssetFormData, AssetType, Donor } from "@/types";
 import { Button } from "@/components/ui/button";
+import { ASSET_TYPE_NAMES } from "@/lib/constants";
 
 type AssetFormProps = {
   initialData?: Partial<Asset>;
   donors: Donor[];
   onSubmit: (data: AssetFormData) => Promise<void>;
   isSubmitting?: boolean;
-};
-
-const assetTypeNames: Record<string, string> = {
-  CEYREK_ALTIN: "Çeyrek Altın",
-  TAM_ALTIN: "Tam Altın",
-  RESAT: "Reşat",
-  BESI_BIR_YERDE: "Beşi Bir Yerde",
-  BILEZIK: "Bilezik",
-  GRAM_GOLD: "Gram Altın",
-  TURKISH_LIRA: "Türk Lirası",
-  DOLLAR: "Dolar",
-  EURO: "Euro",
 };
 
 export function AssetForm({ initialData, donors, onSubmit, isSubmitting = false }: AssetFormProps) {
@@ -127,7 +116,7 @@ export function AssetForm({ initialData, donors, onSubmit, isSubmitting = false 
             onChange={(e) => setType(e.target.value as AssetType)}
             className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
           >
-            {Object.entries(assetTypeNames).map(([value, label]) => (
+            {Object.entries(ASSET_TYPE_NAMES).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
               </option>

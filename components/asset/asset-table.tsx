@@ -3,23 +3,11 @@
 import { Asset, AssetType } from "@/types";
 import Link from "next/link";
 import { useState } from "react";
+import { ASSET_TYPE_NAMES } from "@/lib/constants";
 
 type AssetTableProps = {
   assets: Asset[];
   onDelete?: (assetId: string) => void;
-};
-
-const assetTypeNames: Record<string, string> = {
-  CEYREK_ALTIN: "Çeyrek Altın",
-  TAM_ALTIN: "Tam Altın",
-  YARIM_ALTIN: "Yarım Altın",
-  RESAT: "Reşat",
-  BESI_BIR_YERDE: "Beşi Bir Yerde",
-  BILEZIK: "Bilezik",
-  GRAM_GOLD: "Gram Altın",
-  TURKISH_LIRA: "Türk Lirası",
-  DOLLAR: "Dolar",
-  EURO: "Euro",
 };
 
 export function AssetTable({ assets, onDelete }: AssetTableProps) {
@@ -71,7 +59,7 @@ export function AssetTable({ assets, onDelete }: AssetTableProps) {
             assets.map((asset) => (
               <tr key={asset.id}>
                 <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900">
-                  {asset.assetType?.type ? assetTypeNames[asset.assetType.type] : "Bilinmeyen Tür"}
+                  {asset.assetType?.type ? ASSET_TYPE_NAMES[asset.assetType.type] : "Bilinmeyen Tür"}
                 </td>
                 <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                   {asset.assetType?.type === AssetType.BILEZIK || asset.assetType?.type === AssetType.GRAM_GOLD ? (

@@ -4,20 +4,8 @@ import { authOptions } from "../api/auth/[...nextauth]/route";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { calculatePortfolioChange, formatCurrency, formatPercentage } from "@/lib/portfolio";
-
-// Map AssetType to Turkish display name
-const assetTypeNames: Record<string, string> = {
-  CEYREK_ALTIN: "Çeyrek Altın",
-  YARIM_ALTIN: "Yarım Altın",
-  TAM_ALTIN: "Tam Altın",
-  RESAT: "Reşat",
-  BESI_BIR_YERDE: "Beşi Bir Yerde",
-  BILEZIK: "Bilezik",
-  GRAM_GOLD: "Gram Altın",
-  TURKISH_LIRA: "Türk Lirası",
-  DOLLAR: "Dolar",
-  EURO: "Euro",
-};
+import { ASSET_TYPE_NAMES } from "@/lib/constants";
+import { AssetType } from "@/types";
 
 export default async function Dashboard() {
   const session = await getServerSession(authOptions);
@@ -195,7 +183,7 @@ export default async function Dashboard() {
                     {recentAssets.map((asset) => (
                       <tr key={asset.id}>
                         <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900">
-                          {assetTypeNames[asset.type]}
+                          {ASSET_TYPE_NAMES[asset.type as AssetType]}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                           {formatCurrency(asset.initialValue)}
@@ -224,7 +212,7 @@ export default async function Dashboard() {
                 {assetTypes.map((item) => (
                   <div key={item.type} className="flex items-center">
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">{assetTypeNames[item.type]}</p>
+                      <p className="text-sm font-medium text-gray-900">{ASSET_TYPE_NAMES[item.type as AssetType]}</p>
                       <p className="text-sm text-gray-500">{item.count} adet</p>
                     </div>
                     <div className="text-right">

@@ -6,20 +6,7 @@ import { Button } from "@/components/ui/button";
 import { AssetType } from "@/types";
 import Link from "next/link";
 import { useWeddingDate } from "@/context/wedding-date-context";
-
-// Map AssetType to Turkish display name
-const assetTypeNames: Record<string, string> = {
-  CEYREK_ALTIN: "Çeyrek Altın",
-  YARIM_ALTIN: "Yarım Altın",
-  TAM_ALTIN: "Tam Altın",
-  RESAT: "Reşat",
-  BESI_BIR_YERDE: "Beşi Bir Yerde",
-  BILEZIK: "Bilezik",
-  GRAM_GOLD: "Gram Altın",
-  TURKISH_LIRA: "Türk Lirası",
-  DOLLAR: "Dolar",
-  EURO: "Euro",
-};
+import { ASSET_TYPE_NAMES, CURRENCY_ASSETS, GRAM_REQUIRED_ASSETS } from "@/lib/constants";
 
 export default function IntegratedAddPage() {
   const router = useRouter();
@@ -36,15 +23,14 @@ export default function IntegratedAddPage() {
   const [quantity, setQuantity] = useState<number>(1);
   const [amount, setAmount] = useState<number | undefined>(undefined);
   const [grams, setGrams] = useState<number | undefined>(undefined);
-  const [carat, setCarat] = useState<number | undefined>(undefined);
   // Use wedding date as default if available, otherwise use current date
   const [dateReceived, setDateReceived] = useState<string>(
     weddingDate || new Date().toISOString().split("T")[0]
   );
   
   // Determine if fields should be shown based on asset type
-  const showMoneyFields = assetType === AssetType.TURKISH_LIRA || assetType === AssetType.DOLLAR || assetType === AssetType.EURO;
-  const showGoldFields = assetType === AssetType.BILEZIK || assetType === AssetType.GRAM_GOLD;
+  const showMoneyFields = CURRENCY_ASSETS.includes(assetType);
+  const showGoldFields = GRAM_REQUIRED_ASSETS.includes(assetType);
   
   const validateForm = (): boolean => {
     // Validate donor name
@@ -67,14 +53,9 @@ export default function IntegratedAddPage() {
         return false;
       }
     } else if (showGoldFields) {
-      // For gold fields that need grams and carat
+      // For gold fields that need grams
       if (!grams) {
         setError("Gram alanı zorunludur.");
-        return false;
-      }
-      
-      if (!carat) {
-        setError("Karat/Ayar seçmelisiniz.");
         return false;
       }
     } else {
@@ -86,6 +67,19 @@ export default function IntegratedAddPage() {
     }
     
     return true;
+  };
+  
+  // Helper function to get carat value based on asset type
+  const getCaratFromAssetType = (type: AssetType): number | undefined => {
+    switch (type) {
+      case AssetType.GRAM_ALTIN_22K:
+        return 22;
+      case AssetType.BILEZIK:
+      case AssetType.GRAM_GOLD:
+        return 24; // Default to 24k for other gold types
+      default:
+        return undefined;
+    }
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -125,7 +119,7 @@ export default function IntegratedAddPage() {
         type: assetType,
         quantity: showMoneyFields ? amount : quantity,
         grams,
-        carat,
+        carat: getCaratFromAssetType(assetType),
         dateReceived,
         donorId: donor.id,
       };
@@ -264,24 +258,18 @@ export default function IntegratedAddPage() {
                     onChange={(e) => {
                       setAssetType(e.target.value as AssetType);
                       // Reset fields when type changes
-                      if (e.target.value === AssetType.BILEZIK || e.target.value === AssetType.GRAM_GOLD) {
+                      if (GRAM_REQUIRED_ASSETS.includes(e.target.value as AssetType)) {
                         setAmount(undefined);
-                      } else if (
-                        e.target.value === AssetType.TURKISH_LIRA || 
-                        e.target.value === AssetType.DOLLAR || 
-                        e.target.value === AssetType.EURO
-                      ) {
+                      } else if (CURRENCY_ASSETS.includes(e.target.value as AssetType)) {
                         setGrams(undefined);
-                        setCarat(undefined);
                       } else {
                         setAmount(undefined);
                         setGrams(undefined);
-                        setCarat(undefined);
                       }
                     }}
                     className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                   >
-                    {Object.entries(assetTypeNames).map(([value, label]) => (
+                    {Object.entries(ASSET_TYPE_NAMES).map(([value, label]) => (
                       <option key={value} value={value}>
                         {label}
                       </option>
@@ -336,46 +324,23 @@ export default function IntegratedAddPage() {
               )}
               
               {showGoldFields && (
-                <>
-                  <div className="mt-4">
-                    <label htmlFor="grams" className="block text-sm font-medium leading-6 text-gray-900">
-                      Gram
-                    </label>
-                    <div className="mt-2">
-                      <input
-                        id="grams"
-                        name="grams"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={grams || ""}
-                        onChange={(e) => setGrams(parseFloat(e.target.value) || undefined)}
-                        className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                      />
-                    </div>
+                <div className="mt-4">
+                  <label htmlFor="grams" className="block text-sm font-medium leading-6 text-gray-900">
+                    Gram
+                  </label>
+                  <div className="mt-2">
+                    <input
+                      id="grams"
+                      name="grams"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={grams || ""}
+                      onChange={(e) => setGrams(parseFloat(e.target.value) || undefined)}
+                      className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    />
                   </div>
-                  
-                  <div className="mt-4">
-                    <label htmlFor="carat" className="block text-sm font-medium leading-6 text-gray-900">
-                      Karat (Ayar)
-                    </label>
-                    <div className="mt-2">
-                      <select
-                        id="carat"
-                        name="carat"
-                        value={carat || ""}
-                        onChange={(e) => setCarat(parseInt(e.target.value) || undefined)}
-                        className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                      >
-                        <option value="">Seçiniz</option>
-                        <option value="14">14 Ayar</option>
-                        <option value="18">18 Ayar</option>
-                        <option value="22">22 Ayar</option>
-                        <option value="24">24 Ayar</option>
-                      </select>
-                    </div>
-                  </div>
-                </>
+                </div>
               )}
             </div>
             
