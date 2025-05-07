@@ -29,12 +29,29 @@ export async function GET() {
         { status: 401 }
       );
     }
-    
-    const assets = await prisma.asset.findMany({
+
+    // Get user's wedding memberships
+    const userWeddings = await prisma.weddingMember.findMany({
       where: { userId: session.user.id },
+      select: { weddingId: true }
+    });
+
+    if (userWeddings.length === 0) {
+      return NextResponse.json(
+        { error: "Henüz bir düğüne ait değilsiniz." },
+        { status: 404 }
+      );
+    }
+
+    // Get assets for all weddings user is a member of
+    const assets = await prisma.asset.findMany({
+      where: { 
+        weddingId: { in: userWeddings.map(w => w.weddingId) }
+      },
       include: { 
         donor: true,
-        assetType: true 
+        assetType: true,
+        wedding: true
       },
       orderBy: { createdAt: "desc" },
     });
@@ -321,6 +338,29 @@ export async function POST(request: NextRequest) {
     
     const data = await request.json();
     
+    if (!data.weddingId) {
+      return NextResponse.json(
+        { error: "Düğün ID'si zorunludur." },
+        { status: 400 }
+      );
+    }
+
+    // Check if user has admin access to the wedding
+    const weddingMember = await prisma.weddingMember.findFirst({
+      where: { 
+        userId: session.user.id,
+        weddingId: data.weddingId,
+        role: 'ADMIN'
+      }
+    });
+
+    if (!weddingMember) {
+      return NextResponse.json(
+        { error: "Bu düğün için yetkiniz yok." },
+        { status: 403 }
+      );
+    }
+    
     // Validate asset data
     if (!data.type || !data.dateReceived || !data.donorId) {
       return NextResponse.json(
@@ -355,9 +395,12 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Validate donor exists and belongs to user
+    // Validate donor exists and belongs to wedding
     const donor = await prisma.donor.findFirst({
-      where: { id: data.donorId, userId: session.user.id },
+      where: { 
+        id: data.donorId,
+        weddingId: data.weddingId
+      },
     });
     
     if (!donor) {
@@ -392,8 +435,8 @@ export async function POST(request: NextRequest) {
     // Create the asset
     const asset = await prisma.asset.create({
       data: {
-        userId: session.user.id,
-        assetTypeId: assetTypeInfo.id, // Use the ID from assetTypeInfo
+        weddingId: data.weddingId,
+        assetTypeId: assetTypeInfo.id,
         quantity: quantity,
         grams: data.grams || null,
         carat: data.carat || null,
@@ -402,8 +445,9 @@ export async function POST(request: NextRequest) {
         donorId: data.donorId,
       },
       include: { 
-        donor: true, 
-        assetType: true 
+        donor: true,
+        assetType: true,
+        wedding: true
       },
     });
     

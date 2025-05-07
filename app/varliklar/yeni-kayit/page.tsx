@@ -5,10 +5,9 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { AssetType } from "@/types";
 import Link from "next/link";
-import { useWeddingDate } from "@/context/wedding-date-context";
 import { ASSET_TYPE_NAMES, CURRENCY_ASSETS, GRAM_REQUIRED_ASSETS } from "@/lib/constants";
 import dynamic from 'next/dynamic';
-import type { GroupBase, SingleValue } from 'react-select';
+import type { SingleValue } from 'react-select';
 
 const Select = dynamic(() => import('react-select'), {
   ssr: false
@@ -21,7 +20,6 @@ type AssetTypeOption = {
 
 export default function IntegratedAddPage() {
   const router = useRouter();
-  const { weddingDate } = useWeddingDate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -35,9 +33,8 @@ export default function IntegratedAddPage() {
   const [amount, setAmount] = useState<number | undefined>(undefined);
   const [grams, setGrams] = useState<number | undefined>(undefined);
   const [carat, setCarat] = useState<number | undefined>(undefined);
-  // Use wedding date as default if available, otherwise use current date
   const [dateReceived, setDateReceived] = useState<string>(
-    weddingDate || new Date().toISOString().split("T")[0]
+    new Date().toISOString().split("T")[0]
   );
   
   // Determine if fields should be shown based on asset type
@@ -198,13 +195,12 @@ export default function IntegratedAddPage() {
                 </label>
                 <div className="mt-2">
                   <input
-                    id="donorName"
-                    name="donorName"
                     type="text"
-                    required
+                    id="donorName"
                     value={donorName}
                     onChange={(e) => setDonorName(e.target.value)}
-                    className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="Bağışçının adını girin"
                   />
                 </div>
               </div>
@@ -213,34 +209,25 @@ export default function IntegratedAddPage() {
                 <label className="block text-sm font-medium leading-6 text-gray-900 mb-2">
                   Taraf
                 </label>
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center">
+                <div className="flex space-x-4">
+                  <label className="inline-flex items-center">
                     <input
-                      id="isGroomSide"
-                      name="isGroomSide"
                       type="checkbox"
                       checked={isGroomSide}
                       onChange={(e) => setIsGroomSide(e.target.checked)}
-                      className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                      className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                     />
-                    <label htmlFor="isGroomSide" className="ml-2 block text-sm text-gray-900">
-                      Damat Tarafı
-                    </label>
-                  </div>
-                  
-                  <div className="flex items-center">
+                    <span className="ml-2 text-sm text-gray-700">Damat Tarafı</span>
+                  </label>
+                  <label className="inline-flex items-center">
                     <input
-                      id="isBrideSide"
-                      name="isBrideSide"
                       type="checkbox"
                       checked={isBrideSide}
                       onChange={(e) => setIsBrideSide(e.target.checked)}
-                      className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                      className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                     />
-                    <label htmlFor="isBrideSide" className="ml-2 block text-sm text-gray-900">
-                      Gelin Tarafı
-                    </label>
-                  </div>
+                    <span className="ml-2 text-sm text-gray-700">Gelin Tarafı</span>
+                  </label>
                 </div>
               </div>
             </div>
@@ -249,156 +236,124 @@ export default function IntegratedAddPage() {
             <div>
               <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">Hediye Bilgileri</h3>
               
-              <div>
-                <label htmlFor="assetType" className="block text-sm font-medium leading-6 text-gray-900">
-                  Hediye Türü
-                </label>
-                <div className="mt-2">
-                  <Select<AssetTypeOption, false, GroupBase<AssetTypeOption>>
-                    id="assetType"
-                    name="assetType"
-                    value={{ value: assetType, label: ASSET_TYPE_NAMES[assetType] }}
-                    onChange={(selectedOption: SingleValue<AssetTypeOption>) => {
-                      if (selectedOption) {
-                        setAssetType(selectedOption.value);
-                        // Reset fields when type changes
-                        if (GRAM_REQUIRED_ASSETS.includes(selectedOption.value)) {
-                          setAmount(undefined);
-                        } else if (CURRENCY_ASSETS.includes(selectedOption.value)) {
-                          setGrams(undefined);
-                        } else {
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="assetType" className="block text-sm font-medium leading-6 text-gray-900">
+                    Hediye Türü
+                  </label>
+                  <div className="mt-2">
+                    <Select
+                      id="assetType"
+                      value={{ value: assetType, label: ASSET_TYPE_NAMES[assetType] }}
+                      onChange={(option: SingleValue<AssetTypeOption>) => {
+                        if (option) {
+                          setAssetType(option.value);
+                          // Reset fields when type changes
                           setAmount(undefined);
                           setGrams(undefined);
+                          setCarat(undefined);
+                          setQuantity(1);
                         }
-                      }
-                    }}
-                    options={Object.entries(ASSET_TYPE_NAMES).map(([value, label]) => ({
-                      value: value as AssetType,
-                      label
-                    }))}
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                    isSearchable={true}
-                  />
+                      }}
+                      options={Object.values(AssetType).map(type => ({
+                        value: type,
+                        label: ASSET_TYPE_NAMES[type]
+                      }))}
+                      className="basic-single"
+                      classNamePrefix="select"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label htmlFor="dateReceived" className="block text-sm font-medium leading-6 text-gray-900">
+                    Alınma Tarihi
+                  </label>
+                  <div className="mt-2">
+                    <input
+                      type="date"
+                      id="dateReceived"
+                      value={dateReceived}
+                      onChange={(e) => setDateReceived(e.target.value)}
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    />
+                  </div>
                 </div>
               </div>
               
-              {/* Only show Quantity field for non-currency assets */}
-              {!showMoneyFields && (
-                <div className="mt-4">
-                  <label htmlFor="quantity" className="block text-sm font-medium leading-6 text-gray-900">
-                    Adet
-                  </label>
-                  <div className="mt-2">
-                    <input
-                      id="quantity"
-                      name="quantity"
-                      type="number"
-                      min="1"
-                      value={quantity}
-                      onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                      className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                    />
-                  </div>
-                </div>
-              )}
-              
-              {showMoneyFields && (
-                <div className="mt-4">
-                  <label htmlFor="amount" className="block text-sm font-medium leading-6 text-gray-900">
-                    {assetType === AssetType.TURKISH_LIRA ? "Miktar (TL)" : 
-                     assetType === AssetType.DOLLAR ? "Miktar ($)" : 
-                     "Miktar (€)"}
-                  </label>
-                  <div className="mt-2">
-                    <input
-                      id="amount"
-                      name="amount"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={amount || ""}
-                      onChange={(e) => setAmount(parseFloat(e.target.value) || undefined)}
-                      className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                    />
-                    <p className="mt-1 text-sm text-gray-500">
-                      Para birimi değeri doğrudan girilir, adet belirtmeye gerek yoktur.
-                    </p>
-                  </div>
-                </div>
-              )}
-              
-              {showGoldFields && (
-                <>
-                  <div className="mt-4">
-                    <label htmlFor="grams" className="block text-sm font-medium leading-6 text-gray-900">
-                      Gram
+              {/* Dynamic fields based on asset type */}
+              <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
+                {showMoneyFields ? (
+                  <div>
+                    <label htmlFor="amount" className="block text-sm font-medium leading-6 text-gray-900">
+                      Miktar
                     </label>
                     <div className="mt-2">
                       <input
-                        id="grams"
-                        name="grams"
                         type="number"
-                        step="0.01"
-                        min="0"
-                        value={grams || ""}
-                        onChange={(e) => setGrams(parseFloat(e.target.value) || undefined)}
-                        className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                        id="amount"
+                        value={amount || ''}
+                        onChange={(e) => setAmount(parseFloat(e.target.value))}
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        placeholder="Miktar girin"
                       />
                     </div>
                   </div>
-                  
-                  <div className="mt-4">
-                    <label htmlFor="carat" className="block text-sm font-medium leading-6 text-gray-900">
-                      Karat (Ayar)
+                ) : showGoldFields ? (
+                  <>
+                    <div>
+                      <label htmlFor="grams" className="block text-sm font-medium leading-6 text-gray-900">
+                        Gram
+                      </label>
+                      <div className="mt-2">
+                        <input
+                          type="number"
+                          id="grams"
+                          value={grams || ''}
+                          onChange={(e) => setGrams(parseFloat(e.target.value))}
+                          className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          placeholder="Gram girin"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label htmlFor="carat" className="block text-sm font-medium leading-6 text-gray-900">
+                        Karat (Ayar)
+                      </label>
+                      <div className="mt-2">
+                        <input
+                          type="number"
+                          id="carat"
+                          value={carat || ''}
+                          onChange={(e) => setCarat(parseInt(e.target.value))}
+                          className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          placeholder="Karat girin"
+                        />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <label htmlFor="quantity" className="block text-sm font-medium leading-6 text-gray-900">
+                      Adet
                     </label>
                     <div className="mt-2">
-                      <select
-                        id="carat"
-                        name="carat"
-                        value={carat || ""}
-                        onChange={(e) => setCarat(parseInt(e.target.value) || undefined)}
-                        className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                      >
-                        <option value="">Seçiniz</option>
-                        <option value="14">14 Ayar</option>
-                        <option value="18">18 Ayar</option>
-                        <option value="22">22 Ayar</option>
-                        <option value="24">24 Ayar</option>
-                      </select>
+                      <input
+                        type="number"
+                        id="quantity"
+                        value={quantity}
+                        onChange={(e) => setQuantity(parseInt(e.target.value))}
+                        min="1"
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      />
                     </div>
                   </div>
-                </>
-              )}
-            </div>
-            
-            <div className="mt-4">
-              <label htmlFor="dateReceived" className="block text-sm font-medium leading-6 text-gray-900">
-                Alınma Tarihi
-              </label>
-              <div className="mt-2">
-                <input
-                  id="dateReceived"
-                  name="dateReceived"
-                  type="date"
-                  required
-                  value={dateReceived}
-                  onChange={(e) => setDateReceived(e.target.value)}
-                  className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                />
-                {(assetType === AssetType.CEYREK_ALTIN || assetType === AssetType.YARIM_ALTIN || assetType === AssetType.TAM_ALTIN) && (
-                  <p className="mt-1 text-sm text-gray-500">
-                    Altın değeri seçilen tarihe göre otomatik hesaplanacaktır.
-                  </p>
                 )}
               </div>
             </div>
             
-            <div className="flex justify-end pt-5">
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-              >
+            <div className="flex justify-end">
+              <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Kaydediliyor..." : "Kaydet"}
               </Button>
             </div>

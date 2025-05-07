@@ -14,18 +14,33 @@ export default async function Dashboard() {
     redirect("/auth/giris");
   }
   
+  // Get user's wedding memberships
+  const userWeddings = await prisma.weddingMember.findMany({
+    where: { userId: session.user.id },
+    select: { weddingId: true }
+  });
+
+  if (userWeddings.length === 0) {
+    redirect("/welcome");
+  }
+
   // Fetch data from database - include the assetType relation
   const assets = await prisma.asset.findMany({
-    where: { userId: session.user.id },
+    where: { 
+      weddingId: { in: userWeddings.map(w => w.weddingId) }
+    },
     include: { 
       donor: true,
-      assetType: true 
+      assetType: true,
+      wedding: true
     },
     orderBy: { dateReceived: "desc" },
   });
   
   const donors = await prisma.donor.findMany({
-    where: { userId: session.user.id },
+    where: { 
+      weddingId: { in: userWeddings.map(w => w.weddingId) }
+    },
   });
   
   // Calculate total value
