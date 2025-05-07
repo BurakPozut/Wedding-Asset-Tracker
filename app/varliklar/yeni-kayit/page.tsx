@@ -34,6 +34,7 @@ export default function IntegratedAddPage() {
   const [quantity, setQuantity] = useState<number>(1);
   const [amount, setAmount] = useState<number | undefined>(undefined);
   const [grams, setGrams] = useState<number | undefined>(undefined);
+  const [carat, setCarat] = useState<number | undefined>(undefined);
   // Use wedding date as default if available, otherwise use current date
   const [dateReceived, setDateReceived] = useState<string>(
     weddingDate || new Date().toISOString().split("T")[0]
@@ -69,6 +70,10 @@ export default function IntegratedAddPage() {
         setError("Gram alanı zorunludur.");
         return false;
       }
+      if (!carat) {
+        setError("Karat (Ayar) alanı zorunludur.");
+        return false;
+      }
     } else {
       // Standard gold items like CEYREK_ALTIN that only need quantity
       if (quantity < 1) {
@@ -78,19 +83,6 @@ export default function IntegratedAddPage() {
     }
     
     return true;
-  };
-  
-  // Helper function to get carat value based on asset type
-  const getCaratFromAssetType = (type: AssetType): number | undefined => {
-    switch (type) {
-      case AssetType.GRAM_ALTIN_22K:
-        return 22;
-      case AssetType.BILEZIK:
-      case AssetType.GRAM_GOLD:
-        return 24; // Default to 24k for other gold types
-      default:
-        return undefined;
-    }
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -130,7 +122,7 @@ export default function IntegratedAddPage() {
         type: assetType,
         quantity: showMoneyFields ? amount : quantity,
         grams,
-        carat: getCaratFromAssetType(assetType),
+        carat,
         dateReceived,
         donorId: donor.id,
       };
@@ -337,23 +329,46 @@ export default function IntegratedAddPage() {
               )}
               
               {showGoldFields && (
-                <div className="mt-4">
-                  <label htmlFor="grams" className="block text-sm font-medium leading-6 text-gray-900">
-                    Gram
-                  </label>
-                  <div className="mt-2">
-                    <input
-                      id="grams"
-                      name="grams"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={grams || ""}
-                      onChange={(e) => setGrams(parseFloat(e.target.value) || undefined)}
-                      className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                    />
+                <>
+                  <div className="mt-4">
+                    <label htmlFor="grams" className="block text-sm font-medium leading-6 text-gray-900">
+                      Gram
+                    </label>
+                    <div className="mt-2">
+                      <input
+                        id="grams"
+                        name="grams"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={grams || ""}
+                        onChange={(e) => setGrams(parseFloat(e.target.value) || undefined)}
+                        className="block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                      />
+                    </div>
                   </div>
-                </div>
+                  
+                  <div className="mt-4">
+                    <label htmlFor="carat" className="block text-sm font-medium leading-6 text-gray-900">
+                      Karat (Ayar)
+                    </label>
+                    <div className="mt-2">
+                      <select
+                        id="carat"
+                        name="carat"
+                        value={carat || ""}
+                        onChange={(e) => setCarat(parseInt(e.target.value) || undefined)}
+                        className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                      >
+                        <option value="">Seçiniz</option>
+                        <option value="14">14 Ayar</option>
+                        <option value="18">18 Ayar</option>
+                        <option value="22">22 Ayar</option>
+                        <option value="24">24 Ayar</option>
+                      </select>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
             

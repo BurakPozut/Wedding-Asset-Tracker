@@ -24,6 +24,17 @@ type AssetTypeStats = {
   isProfit: boolean;
 };
 
+// Calculate gold value based on karat
+const getGoldValueByKarat = (caratValue: number, baseValue: number): number => {
+  switch (caratValue) {
+    case 24: return baseValue;       // 24K = 100% of value
+    case 22: return baseValue * 0.92; // 22K = 92% of value
+    case 18: return baseValue * 0.75; // 18K = 75% of value
+    case 14: return baseValue * 0.58; // 14K = 58% of value
+    default: return baseValue * 0.75; // Default to 18K if unknown
+  }
+};
+
 export function AssetSummary({ assets }: AssetSummaryProps) {
   // Format currency
   const formatCurrency = (value: number) => {
@@ -69,8 +80,14 @@ export function AssetSummary({ assets }: AssetSummaryProps) {
       let currentAssetValue = 0;
       
       if (type === AssetType.BILEZIK || type === AssetType.GRAM_GOLD) {
-        // For gold by weight, calculate based on grams
-        currentAssetValue = currentUnitValue * (asset.grams || 0);
+        // For gold by weight, calculate based on grams and carat
+        if (asset.carat) {
+          const adjustedValue = getGoldValueByKarat(asset.carat, currentUnitValue);
+          currentAssetValue = adjustedValue * (asset.grams || 0);
+        } else {
+          // If no carat value, use the base value (assumes 24K)
+          currentAssetValue = currentUnitValue * (asset.grams || 0);
+        }
       } else if (
         type === AssetType.TURKISH_LIRA || 
         type === AssetType.DOLLAR || 
@@ -86,18 +103,14 @@ export function AssetSummary({ assets }: AssetSummaryProps) {
       stats.currentValue += currentAssetValue;
     }
     
-    // Calculate change metrics
+    // Calculate change amounts and percentages
     for (const stats of statsByType.values()) {
       stats.changeAmount = stats.currentValue - stats.initialValue;
-      stats.changePercentage = stats.initialValue > 0 
-        ? (stats.changeAmount / stats.initialValue) * 100 
-        : 0;
+      stats.changePercentage = (stats.changeAmount / stats.initialValue) * 100;
       stats.isProfit = stats.changeAmount >= 0;
     }
     
-    // Convert to array and sort by current value
-    return Array.from(statsByType.values())
-      .sort((a, b) => b.currentValue - a.currentValue);
+    return Array.from(statsByType.values());
   }, [assets]);
   
   // Calculate total values

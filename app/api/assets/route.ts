@@ -187,10 +187,6 @@ const calculateAssetValue = async (
       break;
     
     case AssetType.BILEZIK:
-      if (!grams || !carat) return 0;
-      unitValue = grams * getGoldValueByKarat(carat, assetPrices.BILEZIK);
-      break;
-    
     case AssetType.GRAM_GOLD:
       if (!grams || !carat) return 0;
       if (dateReceived) {
@@ -295,30 +291,6 @@ const calculateAssetValue = async (
         unitValue = gramPrice * 6.614 * 1.045;
       } catch (error) {
         console.error('Error calculating Cumhuriyet Altin value:', error);
-        unitValue = 0;
-      }
-      break;
-
-    case AssetType.GRAM_ALTIN_22K:
-      if (!dateReceived) return 0;
-      try {
-        // Get gram gold price from database
-        const formattedDate = dateReceived.toISOString().split('T')[0];
-        const goldPrice = await prisma.gram_gold_prices.findFirst({
-          where: { price_date: { lte: new Date(formattedDate) } },
-          orderBy: { price_date: 'desc' },
-          select: { bid_price: true }
-        });
-        
-        if (!goldPrice) {
-          throw new Error("No gram gold price found for the given date or any previous date");
-        }
-        
-        const gramPrice = parseFloat(goldPrice.bid_price.toString());
-        // 22k Gram Altin calculation: Gram Altin Fiyati * 0,9167 * 1,01
-        unitValue = gramPrice * 0.9167 * 1.01;
-      } catch (error) {
-        console.error('Error calculating 22k Gram Altin value:', error);
         unitValue = 0;
       }
       break;
