@@ -1,57 +1,101 @@
-import { getServerSession } from "next-auth";
-import { redirect } from "next/navigation";
-import { authOptions } from "../api/auth/[...nextauth]/route";
+"use client";
+
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import { useRouter } from "next/navigation";
 import { calculatePortfolioChange, formatCurrency, formatPercentage } from "@/lib/portfolio";
 import { ASSET_TYPE_NAMES } from "@/lib/constants";
 import { AssetType } from "@/types";
+import { Button } from "@/components/ui/button";
+import Loading from "./loading";
 
-export default async function Dashboard() {
-  const session = await getServerSession(authOptions);
-  
-  if (!session) {
-    redirect("/auth/giris");
-  }
-  
-  // Get user's wedding memberships
-  const userWeddings = await prisma.weddingMember.findMany({
-    where: { userId: session.user.id },
-    include: {
-      wedding: {
-        select: {
-          name: true,
-          date: true
+type Wedding = {
+  id: string;
+  name: string;
+  date: string | null;
+};
+
+type Asset = {
+  id: string;
+  type: AssetType;
+  initialValue: number;
+  donorName: string;
+  date: string;
+  donorId: string;
+  assetType: {
+    type: AssetType;
+    currentValue: number;
+  };
+  dateReceived: Date;
+  donor: {
+    name: string;
+  };
+};
+
+type Donor = {
+  id: string;
+  name: string;
+  isGroomSide: boolean;
+  isBrideSide: boolean;
+};
+
+function DashboardContent() {
+  const [wedding, setWedding] = useState<Wedding | null>(null);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [donors, setDonors] = useState<Donor[]>([]);
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const selectedWeddingId = localStorage.getItem("selectedWeddingId");
+        
+        if (!selectedWeddingId) {
+          router.push("/dugun-secimi");
+          return;
         }
-      }
-    }
-  });
 
-  if (userWeddings.length === 0) {
-    redirect("/hos-geldiniz");
+        // Fetch wedding data
+        const weddingResponse = await fetch(`/api/weddings/${selectedWeddingId}`);
+        if (!weddingResponse.ok) {
+          localStorage.removeItem("selectedWeddingId");
+          router.push("/dugun-secimi");
+          return;
+        }
+        const weddingData = await weddingResponse.json();
+        setWedding(weddingData);
+
+        // Fetch assets and donors
+        const [assetsResponse, donorsResponse] = await Promise.all([
+          fetch(`/api/assets?weddingId=${selectedWeddingId}`),
+          fetch(`/api/donors?weddingId=${selectedWeddingId}`)
+        ]);
+
+        if (assetsResponse.ok) {
+          const assetsData = await assetsResponse.json();
+          setAssets(assetsData.assets);
+        }
+
+        if (donorsResponse.ok) {
+          const donorsData = await donorsResponse.json();
+          setDonors(donorsData);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchData();
+  }, [router]);
+
+  const handleWeddingChange = () => {
+    router.push("/dugun-secimi");
+  };
+
+  if (!wedding) {
+    return null;
   }
 
-  const currentWedding = userWeddings[0].wedding;
-
-  // Fetch data from database - include the assetType relation
-  const assets = await prisma.asset.findMany({
-    where: { 
-      weddingId: { in: userWeddings.map(w => w.weddingId) }
-    },
-    include: { 
-      donor: true,
-      assetType: true,
-      wedding: true
-    },
-    orderBy: { dateReceived: "desc" },
-  });
-  
-  const donors = await prisma.donor.findMany({
-    where: { 
-      weddingId: { in: userWeddings.map(w => w.weddingId) }
-    },
-  });
-  
   // Calculate total value
   const totalValue = assets.reduce((sum, asset) => sum + asset.initialValue, 0);
   
@@ -82,7 +126,7 @@ export default async function Dashboard() {
   const displayGroomValue = sideDistribution.groom + (sideDistribution.both / 2);
   const displayBrideValue = sideDistribution.bride + (sideDistribution.both / 2);
   
-  // Calculate asset types summary - use assetType.type for grouping
+  // Calculate asset types summary
   const assetTypeMap = new Map();
   
   for (const asset of assets) {
@@ -105,16 +149,31 @@ export default async function Dashboard() {
     type: asset.assetType.type,
     initialValue: asset.initialValue,
     donorName: asset.donor.name,
-    date: asset.dateReceived.toISOString().split('T')[0],
+    date: new Date(asset.dateReceived).toISOString().split('T')[0],
   }));
-  
+
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">{currentWedding.name}</h1>
-        <p className="mt-2 text-lg text-gray-700">
-          {currentWedding.date ? new Date(currentWedding.date).toLocaleDateString('tr-TR') : 'Tarih belirlenmemiş'}
-        </p>
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">{wedding.name}</h1>
+          <p className="mt-2 text-lg text-gray-700">
+            {wedding.date ? new Date(wedding.date).toLocaleDateString('tr-TR') : 'Tarih belirlenmemiş'}
+          </p>
+        </div>
+        <Button
+          onClick={handleWeddingChange}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+            <path d="M16 21h5v-5"/>
+          </svg>
+          Düğün Değiştir
+        </Button>
       </div>
       
       {/* Stats */}
@@ -267,5 +326,13 @@ export default async function Dashboard() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <DashboardContent />
+    </Suspense>
   );
 } 

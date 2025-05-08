@@ -16,6 +16,7 @@ export default function DonorDetailPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   
   useEffect(() => {
     const fetchDonorDetails = async () => {
@@ -23,15 +24,28 @@ export default function DonorDetailPage() {
         setIsLoading(true);
         setError(null);
         
-        const response = await fetch(`/api/donors/${id}`);
+        const selectedWeddingId = localStorage.getItem("selectedWeddingId");
+        
+        if (!selectedWeddingId) {
+          router.push("/dugun-secimi");
+          return;
+        }
+        
+        const response = await fetch(`/api/donors/${id}?weddingId=${selectedWeddingId}`);
         
         if (!response.ok) {
+          if (response.status === 403) {
+            localStorage.removeItem("selectedWeddingId");
+            router.push("/dugun-secimi");
+            return;
+          }
           throw new Error("Bağışçı bilgileri getirilemedi.");
         }
         
         const data = await response.json();
         setDonor(data);
         setAssets(data.assets || []);
+        setIsAdmin(data.isAdmin || false);
       } catch (err) {
         console.error("Bağışçı detayı getirme hatası:", err);
         setError("Bağışçı bilgileri yüklenirken bir hata oluştu. Lütfen tekrar deneyin.");
@@ -43,7 +57,7 @@ export default function DonorDetailPage() {
     if (id) {
       fetchDonorDetails();
     }
-  }, [id]);
+  }, [id, router]);
   
   // Format currency
   const formatCurrency = (value: number) => {
@@ -166,7 +180,7 @@ export default function DonorDetailPage() {
               </div>
               
               {assets.length > 0 ? (
-                <AssetTable assets={assets} onDelete={handleDeleteAsset} />
+                <AssetTable assets={assets} onDelete={handleDeleteAsset} isAdmin={isAdmin} />
               ) : (
                 <p className="text-sm text-gray-500">Bu bağışçıya ait varlık bulunmamaktadır.</p>
               )}

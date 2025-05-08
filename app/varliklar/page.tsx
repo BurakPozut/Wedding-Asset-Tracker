@@ -6,12 +6,14 @@ import { AssetTable } from "@/components/asset/asset-table";
 import { AssetSummary } from "@/components/asset/asset-summary";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 export default function AssetsPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const router = useRouter();
   
   useEffect(() => {
     const fetchAssets = async () => {
@@ -19,9 +21,21 @@ export default function AssetsPage() {
         setIsLoading(true);
         setError(null);
         
-        const response = await fetch("/api/assets");
+        const selectedWeddingId = localStorage.getItem("selectedWeddingId");
+        
+        if (!selectedWeddingId) {
+          router.push("/dugun-secimi");
+          return;
+        }
+        
+        const response = await fetch(`/api/assets?weddingId=${selectedWeddingId}`);
         
         if (!response.ok) {
+          if (response.status === 403) {
+            localStorage.removeItem("selectedWeddingId");
+            router.push("/dugun-secimi");
+            return;
+          }
           throw new Error("Varlıklar getirilemedi.");
         }
         
@@ -37,7 +51,7 @@ export default function AssetsPage() {
     };
     
     fetchAssets();
-  }, []);
+  }, [router]);
   
   const handleDeleteAsset = async (assetId: string) => {
     if (!isAdmin) {
@@ -46,11 +60,23 @@ export default function AssetsPage() {
     }
 
     try {
-      const response = await fetch(`/api/assets/${assetId}`, {
+      const selectedWeddingId = localStorage.getItem("selectedWeddingId");
+      
+      if (!selectedWeddingId) {
+        router.push("/dugun-secimi");
+        return;
+      }
+
+      const response = await fetch(`/api/assets/${assetId}?weddingId=${selectedWeddingId}`, {
         method: "DELETE",
       });
       
       if (!response.ok) {
+        if (response.status === 403) {
+          localStorage.removeItem("selectedWeddingId");
+          router.push("/dugun-secimi");
+          return;
+        }
         throw new Error("Varlık silinemedi.");
       }
       

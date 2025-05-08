@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Donor } from "@/types";
 import { DonorCard } from "@/components/donor/donor-card";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function DonorsPage() {
   const [donors, setDonors] = useState<Donor[]>([]);
@@ -11,6 +12,7 @@ export default function DonorsPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredDonors, setFilteredDonors] = useState<Donor[]>([]);
+  const router = useRouter();
   
   useEffect(() => {
     const fetchDonors = async () => {
@@ -18,9 +20,21 @@ export default function DonorsPage() {
         setIsLoading(true);
         setError(null);
         
-        const response = await fetch("/api/donors");
+        const selectedWeddingId = localStorage.getItem("selectedWeddingId");
+        
+        if (!selectedWeddingId) {
+          router.push("/dugun-secimi");
+          return;
+        }
+        
+        const response = await fetch(`/api/donors?weddingId=${selectedWeddingId}`);
         
         if (!response.ok) {
+          if (response.status === 403) {
+            localStorage.removeItem("selectedWeddingId");
+            router.push("/dugun-secimi");
+            return;
+          }
           throw new Error("Bağışçılar getirilemedi.");
         }
         
@@ -36,7 +50,7 @@ export default function DonorsPage() {
     };
     
     fetchDonors();
-  }, []);
+  }, [router]);
   
   // Filter donors when search term changes
   useEffect(() => {

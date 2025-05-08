@@ -156,8 +156,8 @@ export async function PUT(
 
 // DELETE /api/assets/[id] - Delete an asset
 export async function DELETE(
-  _request: NextRequest,
-  { params }: RouteParams
+  request: NextRequest,
+  routeParams: RouteParams
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -168,10 +168,43 @@ export async function DELETE(
         { status: 401 }
       );
     }
-    
-    // Check if the asset exists and belongs to the user
-    const existingAsset = await prisma.asset.findUnique({
-      where: { id: params.id },
+
+    // Get the selected wedding ID from the request
+    const searchParams = request.nextUrl.searchParams;
+    const weddingId = searchParams.get("weddingId");
+
+    if (!weddingId) {
+      return NextResponse.json(
+        { error: "Wedding ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Verify user has access to this wedding
+    const userWedding = await prisma.weddingMember.findFirst({
+      where: {
+        userId: session.user.id,
+        weddingId: weddingId,
+      },
+      select: {
+        role: true,
+      },
+    });
+
+    if (!userWedding) {
+      return NextResponse.json(
+        { error: "You don't have access to this wedding" },
+        { status: 403 }
+      );
+    }
+
+    // Check if the asset exists and belongs to the wedding
+    const params = await routeParams.params;
+    const existingAsset = await prisma.asset.findFirst({
+      where: { 
+        id: params.id,
+        weddingId: weddingId
+      },
       include: { donor: true },
     });
     
@@ -179,13 +212,6 @@ export async function DELETE(
       return NextResponse.json(
         { error: "Varlık bulunamadı." },
         { status: 404 }
-      );
-    }
-    
-    if (existingAsset.userId !== session.user.id) {
-      return NextResponse.json(
-        { error: "Bu varlığı silme izniniz yok." },
-        { status: 403 }
       );
     }
     

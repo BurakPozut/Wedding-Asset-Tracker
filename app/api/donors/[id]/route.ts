@@ -11,11 +11,10 @@ type RouteParams = {
 
 // GET /api/donors/[id] - Get a specific donor and their assets
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   routeParams: RouteParams
 ) {
   try {
-    // Await/unwrap params before using
     const params = await routeParams.params;
     const id = params.id;
     
@@ -27,9 +26,38 @@ export async function GET(
         { status: 401 }
       );
     }
+
+    // Get the selected wedding ID from the request
+    const searchParams = request.nextUrl.searchParams;
+    const weddingId = searchParams.get("weddingId");
+
+    if (!weddingId) {
+      return NextResponse.json(
+        { error: "Wedding ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Verify user has access to this wedding
+    const userWedding = await prisma.weddingMember.findFirst({
+      where: {
+        userId: session.user.id,
+        weddingId: weddingId,
+      },
+    });
+
+    if (!userWedding) {
+      return NextResponse.json(
+        { error: "You don't have access to this wedding" },
+        { status: 403 }
+      );
+    }
     
-    const donor = await prisma.donor.findUnique({
-      where: { id },
+    const donor = await prisma.donor.findFirst({
+      where: { 
+        id,
+        weddingId: weddingId
+      },
       include: { 
         assets: {
           include: {
@@ -47,15 +75,10 @@ export async function GET(
       );
     }
     
-    // Check if the donor belongs to the user
-    if (donor.userId !== session.user.id) {
-      return NextResponse.json(
-        { error: "Bu bağışçıya erişim izniniz yok." },
-        { status: 403 }
-      );
-    }
-    
-    return NextResponse.json(donor);
+    return NextResponse.json({
+      ...donor,
+      isAdmin: userWedding.role === "ADMIN"
+    });
   } catch (error) {
     console.error("Donor fetch error:", error);
     return NextResponse.json(

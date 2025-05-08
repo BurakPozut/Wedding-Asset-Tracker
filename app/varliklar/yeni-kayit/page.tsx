@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { AssetType } from "@/types";
 import Link from "next/link";
-import { ASSET_TYPE_NAMES, CURRENCY_ASSETS, GRAM_REQUIRED_ASSETS } from "@/lib/constants";
+import { ASSET_TYPE_NAMES, CURRENCY_ASSETS, GRAM_REQUIRED_ASSETS, KARAT_VALUES } from "@/lib/constants";
 import dynamic from 'next/dynamic';
 import type { SingleValue } from 'react-select';
 
@@ -348,14 +348,19 @@ export default function IntegratedAddPage() {
                         Karat (Ayar)
                       </label>
                       <div className="mt-2">
-                        <input
-                          type="number"
+                        <select
                           id="carat"
                           value={carat || ''}
-                          onChange={(e) => setCarat(parseInt(e.target.value))}
+                          onChange={(e) => setCarat(parseInt(e.target.value) || undefined)}
                           className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-4 py-2"
-                          placeholder="Karat girin"
-                        />
+                        >
+                          <option value="">Seçiniz</option>
+                          {KARAT_VALUES.map(({ value, label }) => (
+                            <option key={value} value={value}>
+                              {label}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                   </>

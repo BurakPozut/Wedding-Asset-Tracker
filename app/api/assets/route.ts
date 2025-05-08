@@ -19,7 +19,7 @@ import { AssetType } from "@/types";
  */
 
 // GET /api/assets - Get all assets for the current user
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -30,47 +30,48 @@ export async function GET() {
       );
     }
 
-    // Get user's wedding memberships
-    const userWedding = await prisma.wedding.findFirst({
+    // Get the selected wedding ID from the request
+    const searchParams = request.nextUrl.searchParams;
+    const weddingId = searchParams.get("weddingId");
+
+    if (!weddingId) {
+      return NextResponse.json(
+        { error: "Wedding ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Verify user has access to this wedding
+    const userWedding = await prisma.weddingMember.findFirst({
       where: {
-        members: {
-          some: {
-            userId: session.user.id,
-          },
-        },
+        userId: session.user.id,
+        weddingId: weddingId,
       },
-      include: {
-        members: {
-          where: {
-            userId: session.user.id,
-          },
-          select: {
-            role: true,
-          },
-        },
+      select: {
+        role: true,
       },
     });
 
     if (!userWedding) {
       return NextResponse.json(
-        { error: "Henüz bir düğüne ait değilsiniz." },
-        { status: 404 }
+        { error: "You don't have access to this wedding" },
+        { status: 403 }
       );
     }
 
-    const isAdmin = userWedding.members[0]?.role === "ADMIN";
+    const isAdmin = userWedding.role === "ADMIN";
 
     // Get assets for the wedding
     const assets = await prisma.asset.findMany({
       where: { 
-        weddingId: userWedding.id
+        weddingId: weddingId
       },
       include: { 
         donor: true,
         assetType: true,
         wedding: true
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { dateReceived: "desc" },
     });
     
     return NextResponse.json({ assets, isAdmin });

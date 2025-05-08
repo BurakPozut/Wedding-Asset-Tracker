@@ -4,7 +4,7 @@ import { authOptions } from "../auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 
 // GET /api/donors - Get all donors for the current user
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -14,30 +14,39 @@ export async function GET() {
         { status: 401 }
       );
     }
-    
-    // Get user's wedding
-    const userWedding = await prisma.wedding.findFirst({
+
+    // Get the selected wedding ID from the request
+    const searchParams = request.nextUrl.searchParams;
+    const weddingId = searchParams.get("weddingId");
+
+    if (!weddingId) {
+      return NextResponse.json(
+        { error: "Wedding ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Verify user has access to this wedding
+    const userWedding = await prisma.weddingMember.findFirst({
       where: {
-        members: {
-          some: {
-            userId: session.user.id,
-          },
-        },
+        userId: session.user.id,
+        weddingId: weddingId,
       },
     });
 
     if (!userWedding) {
       return NextResponse.json(
-        { error: "Henüz bir düğüne ait değilsiniz." },
-        { status: 404 }
+        { error: "You don't have access to this wedding" },
+        { status: 403 }
       );
     }
-    
+
+    // Get donors for the wedding
     const donors = await prisma.donor.findMany({
       where: { 
-        weddingId: userWedding.id 
+        weddingId: weddingId
       },
-      orderBy: { name: "asc" },
+      orderBy: { createdAt: "desc" },
     });
     
     return NextResponse.json(donors);

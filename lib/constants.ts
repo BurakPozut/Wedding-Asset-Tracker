@@ -36,4 +36,12 @@ export const GOLD_COIN_ASSETS = [
   AssetType.RESAT_ALTIN,
   AssetType.CUMHURIYET_ALTIN,
   AssetType.BESI_BIR_YERDE,
-]; 
+];
+
+// Available karat values for gold items
+export const KARAT_VALUES = [
+  { value: 14, label: "14 Ayar" },
+  { value: 18, label: "18 Ayar" },
+  { value: 22, label: "22 Ayar" },
+  { value: 24, label: "24 Ayar" },
+] as const; 
