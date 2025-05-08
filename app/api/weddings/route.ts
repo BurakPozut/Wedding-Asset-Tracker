@@ -41,7 +41,7 @@ export async function GET() {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const weddings = await prisma.wedding.findMany({
+    const wedding = await prisma.wedding.findFirst({
       where: {
         members: {
           some: {
@@ -54,9 +54,52 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(weddings);
+    return NextResponse.json(wedding);
   } catch (error) {
     console.error('[WEDDINGS_GET]', error);
+    return new NextResponse('Internal Error', { status: 500 });
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+
+    const { date } = await req.json();
+    if (!date) {
+      return new NextResponse('Date is required', { status: 400 });
+    }
+
+    const wedding = await prisma.wedding.findFirst({
+      where: {
+        members: {
+          some: {
+            userId: session.user.id,
+            role: 'ADMIN',
+          },
+        },
+      },
+    });
+
+    if (!wedding) {
+      return new NextResponse('Wedding not found', { status: 404 });
+    }
+
+    const updatedWedding = await prisma.wedding.update({
+      where: {
+        id: wedding.id,
+      },
+      data: {
+        date: new Date(date),
+      },
+    });
+
+    return NextResponse.json(updatedWedding);
+  } catch (error) {
+    console.error('[WEDDINGS_PATCH]', error);
     return new NextResponse('Internal Error', { status: 500 });
   }
 } 
