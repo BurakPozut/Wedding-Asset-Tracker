@@ -45,6 +45,7 @@ prisma/generated
 prisma/generated/*
 prisma/seed.ts
 prisma/migrations
+prisma/backup
 altin.py
 crawler.py
 altinfiyatlari.json
