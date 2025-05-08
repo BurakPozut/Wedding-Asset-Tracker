@@ -18,6 +18,14 @@ type AssetTypeOption = {
   label: string;
 };
 
+// Create sorted asset type options
+const assetTypeOptions: AssetTypeOption[] = Object.entries(ASSET_TYPE_NAMES)
+  .sort(([, a], [, b]) => a.localeCompare(b, 'tr'))
+  .map(([value, label]) => ({
+    value: value as AssetType,
+    label
+  }));
+
 export default function IntegratedAddPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -277,10 +285,7 @@ export default function IntegratedAddPage() {
                           setQuantity(1);
                         }
                       }}
-                      options={Object.values(AssetType).map(type => ({
-                        value: type,
-                        label: ASSET_TYPE_NAMES[type]
-                      }))}
+                      options={assetTypeOptions}
                       className="basic-single"
                       classNamePrefix="select"
                     />
