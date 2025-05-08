@@ -15,8 +15,28 @@ export async function GET() {
       );
     }
     
+    // Get user's wedding
+    const userWedding = await prisma.wedding.findFirst({
+      where: {
+        members: {
+          some: {
+            userId: session.user.id,
+          },
+        },
+      },
+    });
+
+    if (!userWedding) {
+      return NextResponse.json(
+        { error: "Henüz bir düğüne ait değilsiniz." },
+        { status: 404 }
+      );
+    }
+    
     const donors = await prisma.donor.findMany({
-      where: { userId: session.user.id },
+      where: { 
+        weddingId: userWedding.id 
+      },
       orderBy: { name: "asc" },
     });
     
@@ -31,7 +51,7 @@ export async function GET() {
 }
 
 // POST /api/donors - Create a new donor
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -41,24 +61,34 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
+
+    const data = await req.json();
     
-    const data = await request.json();
-    
-    // Validate donor data
-    if (!data.name) {
+    // Get the user's wedding
+    const userWedding = await prisma.wedding.findFirst({
+      where: {
+        members: {
+          some: {
+            userId: session.user.id,
+          },
+        },
+      },
+    });
+
+    if (!userWedding) {
       return NextResponse.json(
-        { error: "İsim alanı zorunludur." },
-        { status: 400 }
+        { error: "Henüz bir düğüne ait değilsiniz." },
+        { status: 404 }
       );
     }
     
     // Create the donor
     const donor = await prisma.donor.create({
       data: {
-        userId: session.user.id,
         name: data.name,
-        isGroomSide: data.isGroomSide || false,
-        isBrideSide: data.isBrideSide || false,
+        isGroomSide: data.isGroomSide,
+        isBrideSide: data.isBrideSide,
+        weddingId: userWedding.id,
       },
     });
     

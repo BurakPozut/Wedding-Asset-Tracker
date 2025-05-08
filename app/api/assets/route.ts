@@ -31,22 +31,39 @@ export async function GET() {
     }
 
     // Get user's wedding memberships
-    const userWeddings = await prisma.weddingMember.findMany({
-      where: { userId: session.user.id },
-      select: { weddingId: true }
+    const userWedding = await prisma.wedding.findFirst({
+      where: {
+        members: {
+          some: {
+            userId: session.user.id,
+          },
+        },
+      },
+      include: {
+        members: {
+          where: {
+            userId: session.user.id,
+          },
+          select: {
+            role: true,
+          },
+        },
+      },
     });
 
-    if (userWeddings.length === 0) {
+    if (!userWedding) {
       return NextResponse.json(
         { error: "Henüz bir düğüne ait değilsiniz." },
         { status: 404 }
       );
     }
 
-    // Get assets for all weddings user is a member of
+    const isAdmin = userWedding.members[0]?.role === "ADMIN";
+
+    // Get assets for the wedding
     const assets = await prisma.asset.findMany({
       where: { 
-        weddingId: { in: userWeddings.map(w => w.weddingId) }
+        weddingId: userWedding.id
       },
       include: { 
         donor: true,
@@ -56,7 +73,7 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
     
-    return NextResponse.json(assets);
+    return NextResponse.json({ assets, isAdmin });
   } catch (error) {
     console.error("Assets fetch error:", error);
     return NextResponse.json(
@@ -335,82 +352,56 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
-    
+
     const data = await request.json();
     
-    if (!data.weddingId) {
+    // Get user's wedding
+    const userWedding = await prisma.wedding.findFirst({
+      where: {
+        members: {
+          some: {
+            userId: session.user.id,
+          },
+        },
+      },
+    });
+
+    if (!userWedding) {
       return NextResponse.json(
-        { error: "Düğün ID'si zorunludur." },
-        { status: 400 }
+        { error: "Henüz bir düğüne ait değilsiniz." },
+        { status: 404 }
       );
     }
 
-    // Check if user has admin access to the wedding
-    const weddingMember = await prisma.weddingMember.findFirst({
-      where: { 
-        userId: session.user.id,
-        weddingId: data.weddingId,
-        role: 'ADMIN'
-      }
+    // Get the donor to verify it belongs to the same wedding
+    const donor = await prisma.donor.findUnique({
+      where: { id: data.donorId },
     });
 
-    if (!weddingMember) {
+    if (!donor) {
       return NextResponse.json(
-        { error: "Bu düğün için yetkiniz yok." },
+        { error: "Bağışçı bulunamadı." },
+        { status: 404 }
+      );
+    }
+
+    if (donor.weddingId !== userWedding.id) {
+      return NextResponse.json(
+        { error: "Bu bağışçıya erişim izniniz yok." },
         { status: 403 }
       );
     }
-    
-    // Validate asset data
-    if (!data.type || !data.dateReceived || !data.donorId) {
-      return NextResponse.json(
-        { error: "Tür, tarih ve bağışçı alanları zorunludur." },
-        { status: 400 }
-      );
-    }
-    
-    // Ensure quantity is at least 1
-    const quantity = data.quantity && parseFloat(data.quantity) > 0 ? parseFloat(data.quantity) : 1;
-    
-    // Validate asset type-specific fields
-    if (
-      (data.type === AssetType.BILEZIK || data.type === AssetType.GRAM_GOLD) &&
-      (!data.grams || !data.carat)
-    ) {
-      return NextResponse.json(
-        { error: "Bilezik ve Gram Altın için gram ve karat alanları zorunludur." },
-        { status: 400 }
-      );
-    }
-    
-    if (
-      (data.type === AssetType.TURKISH_LIRA || 
-       data.type === AssetType.DOLLAR || 
-       data.type === AssetType.EURO) &&
-      !data.quantity
-    ) {
-      return NextResponse.json(
-        { error: "Para birimleri için miktar alanı zorunludur." },
-        { status: 400 }
-      );
-    }
-    
-    // Validate donor exists and belongs to wedding
-    const donor = await prisma.donor.findFirst({
-      where: { 
-        id: data.donorId,
-        weddingId: data.weddingId
-      },
-    });
-    
-    if (!donor) {
-      return NextResponse.json(
-        { error: "Geçersiz bağışçı." },
-        { status: 400 }
-      );
-    }
 
-    // Get assetTypeInfo record by type enum value
+    // Calculate the initial value
+    const initialValue = await calculateAssetValue(
+      data.type,
+      data.quantity,
+      data.grams,
+      data.carat,
+      data.dateReceived ? new Date(data.dateReceived) : undefined
+    );
+
+    // Get the asset type info
     const assetTypeInfo = await prisma.assetTypeInfo.findUnique({
       where: { type: data.type },
     });
@@ -421,43 +412,113 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    
-    // Calculate asset value - now with date parameter
-    const dateReceived = new Date(data.dateReceived);
-    const calculatedValue = await calculateAssetValue(
-      data.type,
-      quantity,
-      data.grams, 
-      data.carat,
-      dateReceived
-    );
-    
+
     // Create the asset
     const asset = await prisma.asset.create({
       data: {
-        weddingId: data.weddingId,
         assetTypeId: assetTypeInfo.id,
-        quantity: quantity,
-        grams: data.grams || null,
-        carat: data.carat || null,
-        initialValue: calculatedValue,
-        dateReceived: dateReceived,
+        quantity: data.quantity,
+        grams: data.grams,
+        carat: data.carat,
+        initialValue,
+        dateReceived: data.dateReceived ? new Date(data.dateReceived) : new Date(),
         donorId: data.donorId,
-      },
-      include: { 
-        donor: true,
-        assetType: true,
-        wedding: true
+        weddingId: userWedding.id,
       },
     });
-    
+
     return NextResponse.json(asset);
   } catch (error) {
     console.error("Asset creation error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Varlık değeri hesaplanamadı.";
     return NextResponse.json(
-      { error: errorMessage },
-      { status: 400 }
+      { error: "Varlık oluşturulurken bir hata oluştu." },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/assets/[id] - Delete an asset
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "Yetkilendirme hatası. Lütfen giriş yapın." },
+        { status: 401 }
+      );
+    }
+
+    // Get user's wedding membership and role
+    const userWedding = await prisma.wedding.findFirst({
+      where: {
+        members: {
+          some: {
+            userId: session.user.id,
+          },
+        },
+      },
+      include: {
+        members: {
+          where: {
+            userId: session.user.id,
+          },
+          select: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    if (!userWedding) {
+      return NextResponse.json(
+        { error: "Henüz bir düğüne ait değilsiniz." },
+        { status: 404 }
+      );
+    }
+
+    // Check if user is admin
+    const isAdmin = userWedding.members[0]?.role === "ADMIN";
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: "Bu işlem için yetkiniz bulunmamaktadır." },
+        { status: 403 }
+      );
+    }
+
+    // Get the asset to verify it belongs to the wedding
+    const asset = await prisma.asset.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!asset) {
+      return NextResponse.json(
+        { error: "Varlık bulunamadı." },
+        { status: 404 }
+      );
+    }
+
+    if (asset.weddingId !== userWedding.id) {
+      return NextResponse.json(
+        { error: "Bu varlığa erişim izniniz yok." },
+        { status: 403 }
+      );
+    }
+
+    // Delete the asset
+    await prisma.asset.delete({
+      where: { id: params.id },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Asset deletion error:", error);
+    return NextResponse.json(
+      { error: "Varlık silinirken bir hata oluştu." },
+      { status: 500 }
     );
   }
 } 

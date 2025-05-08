@@ -50,7 +50,16 @@ export async function GET() {
         },
       },
       include: {
-        members: true,
+        members: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
       },
     });
 

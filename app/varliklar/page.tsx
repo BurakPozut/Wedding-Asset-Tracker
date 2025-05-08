@@ -11,6 +11,7 @@ export default function AssetsPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   
   useEffect(() => {
     const fetchAssets = async () => {
@@ -25,7 +26,8 @@ export default function AssetsPage() {
         }
         
         const data = await response.json();
-        setAssets(data);
+        setAssets(data.assets);
+        setIsAdmin(data.isAdmin);
       } catch (err) {
         console.error("Varlıkları getirme hatası:", err);
         setError("Varlıklar yüklenirken bir hata oluştu. Lütfen tekrar deneyin.");
@@ -38,6 +40,11 @@ export default function AssetsPage() {
   }, []);
   
   const handleDeleteAsset = async (assetId: string) => {
+    if (!isAdmin) {
+      alert("Bu işlem için yetkiniz bulunmamaktadır.");
+      return;
+    }
+
     try {
       const response = await fetch(`/api/assets/${assetId}`, {
         method: "DELETE",
@@ -64,16 +71,18 @@ export default function AssetsPage() {
             Düğününüzde aldığınız tüm hediyeleriniz
           </p>
         </div>
-        <div className="mt-4 sm:mt-0">
-          <Link href="/varliklar/yeni-kayit">
-            <Button>
-              <svg className="-ml-0.5 mr-1.5 h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
-              </svg>
-              Yeni Varlık Ekle
-            </Button>
-          </Link>
-        </div>
+        {isAdmin && (
+          <div className="mt-4 sm:mt-0">
+            <Link href="/varliklar/yeni-kayit">
+              <Button>
+                <svg className="-ml-0.5 mr-1.5 h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+                </svg>
+                Yeni Varlık Ekle
+              </Button>
+            </Link>
+          </div>
+        )}
       </div>
       
       {isLoading ? (
@@ -104,7 +113,7 @@ export default function AssetsPage() {
           {/* Asset Table */}
           <div className="bg-white shadow rounded-lg">
             <div className="px-4 py-5 sm:p-6">
-              <AssetTable assets={assets} onDelete={handleDeleteAsset} />
+              <AssetTable assets={assets} onDelete={handleDeleteAsset} isAdmin={isAdmin} />
             </div>
           </div>
         </>

@@ -2,15 +2,28 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { useSession } from "next-auth/react";
+
+type WeddingMember = {
+  id: string;
+  role: 'ADMIN' | 'VIEWER';
+  user: {
+    name: string;
+    email: string;
+  };
+};
 
 export default function SettingsPage() {
+  const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [weddingDate, setWeddingDate] = useState<string>("");
+  const [members, setMembers] = useState<WeddingMember[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // Fetch current wedding date
-    const fetchWeddingDate = async () => {
+    // Fetch current wedding date and members
+    const fetchWeddingData = async () => {
       try {
         const response = await fetch("/api/weddings");
         if (response.ok) {
@@ -18,14 +31,22 @@ export default function SettingsPage() {
           if (data?.date) {
             setWeddingDate(new Date(data.date).toISOString().split('T')[0]);
           }
+          if (data?.members) {
+            setMembers(data.members);
+            // Check if current user is admin
+            const currentUserMember = data.members.find((m: WeddingMember) => m.user.email === session?.user?.email);
+            setIsAdmin(currentUserMember?.role === 'ADMIN');
+          }
         }
       } catch (error) {
-        console.error("Error fetching wedding date:", error);
+        console.error("Error fetching wedding data:", error);
       }
     };
 
-    fetchWeddingDate();
-  }, []);
+    if (session) {
+      fetchWeddingData();
+    }
+  }, [session]);
 
   const handleSaveWeddingDate = async () => {
     setIsLoading(true);
@@ -53,6 +74,28 @@ export default function SettingsPage() {
     }
   };
 
+  const handleRemoveMember = async (memberId: string) => {
+    if (!confirm("Bu üyeyi düğünden çıkarmak istediğinizden emin misiniz?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/weddings/members/${memberId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setMembers(members.filter(m => m.id !== memberId));
+        setMessage({ text: "Üye başarıyla çıkarıldı.", type: "success" });
+      } else {
+        setMessage({ text: "Üye çıkarılırken bir hata oluştu.", type: "error" });
+      }
+    } catch (error) {
+      console.error("Error removing member:", error);
+      setMessage({ text: "Bir hata oluştu. Lütfen tekrar deneyin.", type: "error" });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="max-w-2xl mx-auto py-8">
@@ -74,7 +117,7 @@ export default function SettingsPage() {
         </div>
       )}
       
-      <div className="bg-white shadow rounded-lg">
+      <div className="bg-white shadow rounded-lg mb-8">
         <div className="px-4 py-5 sm:p-6">
           <h2 className="text-lg font-medium leading-6 text-gray-900 mb-4">Düğün Ayarları</h2>
           
@@ -105,6 +148,55 @@ export default function SettingsPage() {
                 {isLoading ? "Kaydediliyor..." : "Kaydet"}
               </Button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Wedding Members Table */}
+      <div className="bg-white shadow rounded-lg">
+        <div className="px-4 py-5 sm:p-6">
+          <h2 className="text-lg font-medium leading-6 text-gray-900 mb-4">Düğün Üyeleri</h2>
+          
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-300">
+              <thead>
+                <tr>
+                  <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">İsim</th>
+                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">E-posta</th>
+                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Rol</th>
+                  {isAdmin && (
+                    <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                      <span className="sr-only">İşlemler</span>
+                    </th>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {members.map((member) => (
+                  <tr key={member.id}>
+                    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900">
+                      {member.user?.name || 'İsimsiz Kullanıcı'}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      {member.user?.email || 'E-posta yok'}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      {member.role === 'ADMIN' ? 'Yönetici' : 'Görüntüleyici'}
+                    </td>
+                    {isAdmin && member.role === 'VIEWER' && (
+                      <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                        <button
+                          onClick={() => handleRemoveMember(member.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Çıkar
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
