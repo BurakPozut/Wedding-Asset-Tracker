@@ -17,12 +17,21 @@ export default async function Dashboard() {
   // Get user's wedding memberships
   const userWeddings = await prisma.weddingMember.findMany({
     where: { userId: session.user.id },
-    select: { weddingId: true }
+    include: {
+      wedding: {
+        select: {
+          name: true,
+          date: true
+        }
+      }
+    }
   });
 
   if (userWeddings.length === 0) {
-    redirect("/welcome");
+    redirect("/hos-geldiniz");
   }
+
+  const currentWedding = userWeddings[0].wedding;
 
   // Fetch data from database - include the assetType relation
   const assets = await prisma.asset.findMany({
@@ -102,9 +111,9 @@ export default async function Dashboard() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Kontrol Paneli</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900">{currentWedding.name}</h1>
         <p className="mt-2 text-lg text-gray-700">
-          Düğün hediyelerinize genel bakış
+          {currentWedding.date ? new Date(currentWedding.date).toLocaleDateString('tr-TR') : 'Tarih belirlenmemiş'}
         </p>
       </div>
       
