@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { AssetType } from "@/types";
@@ -33,9 +33,31 @@ export default function IntegratedAddPage() {
   const [amount, setAmount] = useState<number | undefined>(undefined);
   const [grams, setGrams] = useState<number | undefined>(undefined);
   const [carat, setCarat] = useState<number | undefined>(undefined);
-  const [dateReceived, setDateReceived] = useState<string>(
-    new Date().toISOString().split("T")[0]
-  );
+  const [dateReceived, setDateReceived] = useState<string>("");
+
+  useEffect(() => {
+    // Fetch wedding date and set it as default
+    const fetchWeddingDate = async () => {
+      try {
+        const response = await fetch("/api/weddings");
+        if (response.ok) {
+          const data = await response.json();
+          if (data?.date) {
+            setDateReceived(new Date(data.date).toISOString().split('T')[0]);
+          } else {
+            // If no wedding date is set, use current date
+            setDateReceived(new Date().toISOString().split('T')[0]);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching wedding date:", error);
+        // If there's an error, use current date
+        setDateReceived(new Date().toISOString().split('T')[0]);
+      }
+    };
+
+    fetchWeddingDate();
+  }, []);
   
   // Determine if fields should be shown based on asset type
   const showMoneyFields = CURRENCY_ASSETS.includes(assetType);
@@ -199,7 +221,7 @@ export default function IntegratedAddPage() {
                     id="donorName"
                     value={donorName}
                     onChange={(e) => setDonorName(e.target.value)}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-4 py-2"
                     placeholder="Bağışçının adını girin"
                   />
                 </div>
@@ -275,7 +297,7 @@ export default function IntegratedAddPage() {
                       id="dateReceived"
                       value={dateReceived}
                       onChange={(e) => setDateReceived(e.target.value)}
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-4 py-2"
                     />
                   </div>
                 </div>
@@ -294,7 +316,7 @@ export default function IntegratedAddPage() {
                         id="amount"
                         value={amount || ''}
                         onChange={(e) => setAmount(parseFloat(e.target.value))}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-4 py-2"
                         placeholder="Miktar girin"
                       />
                     </div>
@@ -311,7 +333,7 @@ export default function IntegratedAddPage() {
                           id="grams"
                           value={grams || ''}
                           onChange={(e) => setGrams(parseFloat(e.target.value))}
-                          className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-4 py-2"
                           placeholder="Gram girin"
                         />
                       </div>
@@ -326,7 +348,7 @@ export default function IntegratedAddPage() {
                           id="carat"
                           value={carat || ''}
                           onChange={(e) => setCarat(parseInt(e.target.value))}
-                          className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-4 py-2"
                           placeholder="Karat girin"
                         />
                       </div>
@@ -344,7 +366,7 @@ export default function IntegratedAddPage() {
                         value={quantity}
                         onChange={(e) => setQuantity(parseInt(e.target.value))}
                         min="1"
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-4 py-2"
                       />
                     </div>
                   </div>
