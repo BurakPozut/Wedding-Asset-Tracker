@@ -1,10 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 export function WeddingForm() {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -15,12 +13,16 @@ export function WeddingForm() {
 
     const formData = new FormData(event.currentTarget);
     const name = formData.get('name') as string;
+    const date = formData.get('date') as string;
 
     try {
       const response = await fetch('/api/weddings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ 
+          name,
+          date: date ? new Date(date).toISOString() : null 
+        }),
       });
 
       if (!response.ok) {
@@ -28,8 +30,13 @@ export function WeddingForm() {
         throw new Error(data.error || 'Bir hata oluştu');
       }
 
-      router.push('/kontrol-paneli');
-      router.refresh();
+      const wedding = await response.json();
+      
+      // Store the wedding ID in localStorage
+      localStorage.setItem("selectedWeddingId", wedding.id);
+      
+      // Force a hard navigation to clear any cached data
+      window.location.href = '/kontrol-paneli';
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Bir hata oluştu');
     } finally {
@@ -59,6 +66,26 @@ export function WeddingForm() {
             placeholder="Örn: Ayşe & Ahmet'in Düğünü"
           />
         </div>
+        <p className="mt-2 text-sm text-gray-500">
+          Düğününüz için bir isim belirleyin
+        </p>
+      </div>
+
+      <div>
+        <label htmlFor="date" className="block text-sm font-medium text-gray-700">
+          Düğün Tarihi
+        </label>
+        <div className="mt-1">
+          <input
+            id="date"
+            name="date"
+            type="date"
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-3"
+          />
+        </div>
+        <p className="mt-2 text-sm text-gray-500">
+          Düğün tarihini seçin (opsiyonel)
+        </p>
       </div>
 
       <div>

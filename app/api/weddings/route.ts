@@ -10,7 +10,7 @@ export async function POST(req: Request) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const { name } = await req.json();
+    const { name, date } = await req.json();
     if (!name) {
       return new NextResponse('Name is required', { status: 400 });
     }
@@ -18,6 +18,7 @@ export async function POST(req: Request) {
     const wedding = await prisma.wedding.create({
       data: {
         name,
+        date: date ? new Date(date) : null,
         members: {
           create: {
             userId: session.user.id,

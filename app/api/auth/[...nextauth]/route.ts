@@ -44,6 +44,10 @@ export const authOptions: AuthOptions = {
       }
       return session;
     },
+    async redirect({ baseUrl }) {
+      // After sign in, redirect to welcome page
+      return `${baseUrl}/hos-geldiniz`;
+    },
   },
 };
 

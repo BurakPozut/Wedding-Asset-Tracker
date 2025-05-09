@@ -20,13 +20,21 @@ export default function WeddingSelection() {
     const fetchWeddings = async () => {
       try {
         const response = await fetch("/api/weddings");
-        if (response.ok) {
-          const data = await response.json();
-          const weddingsArray = Array.isArray(data) ? data : [data];
-          setWeddings(weddingsArray);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
+        const data = await response.json();
+        const weddingsArray = Array.isArray(data) ? data : [];
+        const validWeddings = weddingsArray.filter((wedding): wedding is Wedding => 
+          wedding && 
+          typeof wedding === 'object' && 
+          'id' in wedding && 
+          'name' in wedding
+        );
+        setWeddings(validWeddings);
       } catch (error) {
         console.error("Error fetching weddings:", error);
+        setWeddings([]);
       } finally {
         setIsLoading(false);
       }

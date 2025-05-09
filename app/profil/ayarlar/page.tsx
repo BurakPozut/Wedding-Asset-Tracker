@@ -117,6 +117,22 @@ export default function SettingsPage() {
         </div>
       )}
       
+      {/* New Wedding Creation Section */}
+      <div className="bg-white shadow rounded-lg mb-8">
+        <div className="px-4 py-5 sm:p-6">
+          <h2 className="text-lg font-medium leading-6 text-gray-900 mb-4">Yeni Düğün Oluştur</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Yeni bir düğün oluşturmak için aşağıdaki butona tıklayın.
+          </p>
+          <Button
+            onClick={() => window.location.href = '/dugunler/yeni'}
+            className="w-full sm:w-auto"
+          >
+            Yeni Düğün Oluştur
+          </Button>
+        </div>
+      </div>
+      
       <div className="bg-white shadow rounded-lg mb-8">
         <div className="px-4 py-5 sm:p-6">
           <h2 className="text-lg font-medium leading-6 text-gray-900 mb-4">Düğün Ayarları</h2>
