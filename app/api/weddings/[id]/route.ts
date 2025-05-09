@@ -6,9 +6,10 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const { id } = await params;
     const wedding = await prisma.wedding.findUnique({
       where: {
-        id: params.id,
+        id,
       },
     });
 
