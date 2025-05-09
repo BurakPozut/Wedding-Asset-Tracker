@@ -3,6 +3,7 @@ import { Providers } from "./providers";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import "./globals.css";
+import { Toaster } from 'sonner';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,6 +24,7 @@ export default async function RootLayout({
             <Footer />
           </div>
         </Providers>
+        <Toaster />
       </body>
     </html>
   );

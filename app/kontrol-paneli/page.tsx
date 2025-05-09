@@ -92,6 +92,7 @@ function DashboardContent() {
     router.push("/dugun-secimi");
   };
 
+
   if (!wedding) {
     return null;
   }
@@ -324,6 +325,7 @@ function DashboardContent() {
           </svg>
           Yeni Kayıt Ekle
         </Link>
+        
       </div>
     </div>
   );
