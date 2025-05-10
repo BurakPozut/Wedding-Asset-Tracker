@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 type WeddingMember = {
   id: string;
   role: 'ADMIN' | 'VIEWER';
+  status: 'PENDING' | 'APPROVED';
   user: {
     name: string;
     email: string;
@@ -22,6 +23,8 @@ export default function SettingsPage() {
   const [weddingDate, setWeddingDate] = useState<string>("");
   const [members, setMembers] = useState<WeddingMember[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [invitationLink, setInvitationLink] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
 
   useEffect(() => {
     // Fetch current wedding date and members
@@ -109,6 +112,79 @@ export default function SettingsPage() {
     router.push("/dugun-secimi");
   };
 
+  const handleCreateInvitationLink = async () => {
+    setIsLoading(true);
+    setMessage(null);
+    setInvitationLink(null);
+
+    try {
+      // Get the current wedding ID from the API
+      const weddingResponse = await fetch("/api/weddings");
+      if (!weddingResponse.ok) {
+        throw new Error("Failed to fetch wedding data");
+      }
+      const weddingData = await weddingResponse.json();
+      
+      if (!weddingData?.id) {
+        throw new Error("No wedding ID found");
+      }
+
+      const response = await fetch(`/api/weddings/${weddingData.id}/invitation`, {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setInvitationLink(data.invitationLink);
+        setMessage({ text: "Davet linki başarıyla oluşturuldu.", type: "success" });
+      } else {
+        setMessage({ text: "Davet linki oluşturulurken bir hata oluştu.", type: "error" });
+      }
+    } catch (error) {
+      console.error("Error creating invitation link:", error);
+      setMessage({ text: "Bir hata oluştu. Lütfen tekrar deneyin.", type: "error" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    if (!invitationLink) return;
+    
+    try {
+      await navigator.clipboard.writeText(invitationLink);
+      setIsCopied(true);
+      setMessage({ text: "Link kopyalandı!", type: "success" });
+      
+      // Reset the copied state after 2 seconds
+      setTimeout(() => {
+        setIsCopied(false);
+      }, 2000);
+    } catch (error) {
+      setMessage({ text: "Link kopyalanırken bir hata oluştu.", type: "error" });
+    }
+  };
+
+  const handleApproveMember = async (memberId: string) => {
+    try {
+      const response = await fetch(`/api/weddings/members/${memberId}/approve`, {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        setMembers(members.map(m => 
+          m.id === memberId ? { ...m, status: 'APPROVED' } : m
+        ));
+        setMessage({ text: "Üye başarıyla onaylandı.", type: "success" });
+      } else {
+        setMessage({ text: "Üye onaylanırken bir hata oluştu.", type: "error" });
+      }
+    } catch (error) {
+      console.error("Error approving member:", error);
+      setMessage({ text: "Bir hata oluştu. Lütfen tekrar deneyin.", type: "error" });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="max-w-2xl mx-auto py-8">
@@ -127,6 +203,59 @@ export default function SettingsPage() {
       {message && (
         <div className={`mb-6 rounded-md p-4 ${message.type === "success" ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}>
           {message.text}
+        </div>
+      )}
+      
+      {/* Invitation Link Section */}
+      {isAdmin && (
+        <div className="bg-white shadow rounded-lg mb-8">
+          <div className="px-4 py-5 sm:p-6">
+            <h2 className="text-lg font-medium leading-6 text-gray-900 mb-4">Davet Linki Oluştur</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              Düğünü görüntülemek için bir davet linki oluşturun. Bu link 24 saat geçerlidir.
+            </p>
+            <Button
+              onClick={handleCreateInvitationLink}
+              disabled={isLoading}
+              className="w-full sm:w-auto"
+            >
+              {isLoading ? "Oluşturuluyor..." : "Davet Linki Oluştur"}
+            </Button>
+            {invitationLink && (
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-sm font-medium text-gray-700 mb-2">Davet Linki:</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={invitationLink}
+                    readOnly
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-4 py-2 bg-white"
+                  />
+                  <Button
+                    onClick={handleCopyLink}
+                    className={`flex items-center gap-2 whitespace-nowrap transition-colors ${
+                      isCopied ? "bg-green-600 hover:bg-green-700" : ""
+                    }`}
+                  >
+                    {isCopied ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                      </svg>
+                    )}
+                    {isCopied ? "Kopyalandı!" : "Kopyala"}
+                  </Button>
+                </div>
+                <p className="mt-2 text-xs text-gray-500">
+                  Bu link 24 saat geçerlidir. Linki güvenli bir şekilde paylaşın.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       )}
       
@@ -216,6 +345,7 @@ export default function SettingsPage() {
                   <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">İsim</th>
                   <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">E-posta</th>
                   <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Rol</th>
+                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Durum</th>
                   {isAdmin && (
                     <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
                       <span className="sr-only">İşlemler</span>
@@ -235,14 +365,33 @@ export default function SettingsPage() {
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       {member.role === 'ADMIN' ? 'Yönetici' : 'Görüntüleyici'}
                     </td>
-                    {isAdmin && member.role === 'VIEWER' && (
+                    <td className="whitespace-nowrap px-3 py-4 text-sm">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        member.status === 'APPROVED' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {member.status === 'APPROVED' ? 'Onaylandı' : 'Onay Bekliyor'}
+                      </span>
+                    </td>
+                    {isAdmin && (
                       <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                        <button
-                          onClick={() => handleRemoveMember(member.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Çıkar
-                        </button>
+                        {member.role === 'VIEWER' && member.status === 'PENDING' && (
+                          <button
+                            onClick={() => handleApproveMember(member.id)}
+                            className="text-indigo-600 hover:text-indigo-900 mr-4"
+                          >
+                            Onayla
+                          </button>
+                        )}
+                        {member.role === 'VIEWER' && (
+                          <button
+                            onClick={() => handleRemoveMember(member.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Çıkar
+                          </button>
+                        )}
                       </td>
                     )}
                   </tr>

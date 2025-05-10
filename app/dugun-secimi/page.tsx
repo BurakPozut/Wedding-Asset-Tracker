@@ -9,6 +9,9 @@ type Wedding = {
   date: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  member: {
+    status: 'PENDING' | 'APPROVED';
+  };
 };
 
 export default function WeddingSelection() {
@@ -29,7 +32,8 @@ export default function WeddingSelection() {
           wedding && 
           typeof wedding === 'object' && 
           'id' in wedding && 
-          'name' in wedding
+          'name' in wedding &&
+          'member' in wedding
         );
         setWeddings(validWeddings);
       } catch (error) {
@@ -65,7 +69,7 @@ export default function WeddingSelection() {
               Düğün Bulunamadı
             </h2>
             <p className="mt-2 text-sm text-gray-600">
-              Henüz bir düğün oluşturulmamış
+              Henüz bir düğün oluşturulmamış veya davet edilmediniz
             </p>
           </div>
         </div>
@@ -74,7 +78,7 @@ export default function WeddingSelection() {
   }
 
   return (
-    <div className="min-h-screen  py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
@@ -90,10 +94,21 @@ export default function WeddingSelection() {
             <button
               key={wedding.id}
               onClick={() => handleWeddingSelect(wedding.id)}
-              className="w-full flex items-center justify-between p-6 rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md hover:border-indigo-500 transition-all duration-200 ease-in-out transform hover:-translate-y-0.5"
+              className={`w-full flex items-center justify-between p-6 rounded-xl border ${
+                wedding.member.status === 'APPROVED' 
+                  ? 'border-gray-200 hover:border-indigo-500' 
+                  : 'border-yellow-200 bg-yellow-50'
+              } shadow-sm hover:shadow-md transition-all duration-200 ease-in-out transform hover:-translate-y-0.5`}
             >
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900">{wedding.name}</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-gray-900">{wedding.name}</h3>
+                  {wedding.member.status === 'PENDING' && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                      Onay Bekliyor
+                    </span>
+                  )}
+                </div>
                 {wedding.date && (
                   <p className="mt-1 text-sm text-gray-500">
                     {new Date(wedding.date).toLocaleDateString("tr-TR", {
@@ -115,7 +130,7 @@ export default function WeddingSelection() {
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="text-indigo-500"
+                  className={`${wedding.member.status === 'APPROVED' ? 'text-indigo-500' : 'text-yellow-500'}`}
                 >
                   <path d="M9 18l6-6-6-6" />
                 </svg>

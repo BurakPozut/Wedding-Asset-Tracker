@@ -38,25 +38,26 @@ export async function POST(req: Request) {
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return new NextResponse('Unauthorized', { status: 401 });
+    if (!session?.user) {
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const wedding = await prisma.wedding.findFirst({
+    // Get all weddings where the user is a member
+    const userWeddings = await prisma.weddingMember.findMany({
       where: {
-        members: {
-          some: {
-            userId: session.user.id,
-          },
-        },
+        userId: session.user.id,
       },
       include: {
-        members: {
+        wedding: {
           include: {
-            user: {
-              select: {
-                name: true,
-                email: true,
+            members: {
+              include: {
+                user: {
+                  select: {
+                    name: true,
+                    email: true,
+                  },
+                },
               },
             },
           },
@@ -64,10 +65,18 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(wedding);
+    // Transform the data to include member status
+    const weddings = userWeddings.map((member) => ({
+      ...member.wedding,
+      member: {
+        status: member.status,
+      },
+    }));
+
+    return NextResponse.json(weddings);
   } catch (error) {
-    console.error('[WEDDINGS_GET]', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    console.error("[WEDDINGS_GET]", error);
+    return new NextResponse("Internal Error", { status: 500 });
   }
 }
 

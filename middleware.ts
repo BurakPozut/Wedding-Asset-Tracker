@@ -8,6 +8,13 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/auth/giris") || 
     request.nextUrl.pathname.startsWith("/auth/kayit");
   
+  const isInvitationPage = request.nextUrl.pathname.startsWith("/dugunler/katil/");
+  
+  // Allow access to invitation page without authentication
+  if (isInvitationPage) {
+    return NextResponse.next();
+  }
+  
   // Redirect to login page if not authenticated and trying to access protected routes
   if (!token && !request.nextUrl.pathname.startsWith("/auth") && 
       request.nextUrl.pathname !== "/" && 

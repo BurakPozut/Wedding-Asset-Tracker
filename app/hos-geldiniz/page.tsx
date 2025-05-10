@@ -1,25 +1,71 @@
-import { getServerSession } from "next-auth";
-import { redirect } from "next/navigation";
-import { authOptions } from "../api/auth/[...nextauth]/route";
-import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+"use client";
 
-export default async function Welcome() {
-  const session = await getServerSession(authOptions);
-  
-  if (!session) {
-    redirect("/auth/giris");
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+
+export default function Welcome() {
+  const { status } = useSession();
+  const router = useRouter();
+  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+
+  useEffect(() => {
+    const handleInvitationToken = async () => {
+      const invitationToken = localStorage.getItem("invitationToken");
+      if (invitationToken) {
+        try {
+          const response = await fetch(`/api/weddings/invitation/${invitationToken}/accept`, {
+            method: "POST",
+          });
+
+          if (response.ok) {
+            // Clear the token from localStorage
+            localStorage.removeItem("invitationToken");
+            // Show success message
+            setMessage({
+              text: "Katılım isteğiniz düğün sahibine iletilmiştir. Onaylandıktan sonra düğün detaylarına erişebileceksiniz.",
+              type: "success"
+            });
+          } else {
+            // If there's an error, show error message
+            setMessage({
+              text: "Katılım isteği gönderilirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+              type: "error"
+            });
+            localStorage.removeItem("invitationToken");
+          }
+        } catch (error) {
+          console.error("Error accepting invitation:", error);
+          setMessage({
+            text: "Bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+            type: "error"
+          });
+          localStorage.removeItem("invitationToken");
+        }
+      }
+    };
+
+    if (status === "authenticated") {
+      handleInvitationToken();
+    }
+  }, [status, router]);
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
+            Yükleniyor...
+          </h2>
+        </div>
+      </div>
+    );
   }
 
-  // Check if user already has any wedding memberships
-  const userWeddings = await prisma.weddingMember.findMany({
-    where: { userId: session.user.id },
-    include: { wedding: true }
-  });
-
-  // If user already has weddings, redirect to dashboard
-  if (userWeddings.length > 0) {
-    redirect("/kontrol-paneli");
+  if (status === "unauthenticated") {
+    router.push("/auth/giris");
+    return null;
   }
 
   return (
@@ -28,6 +74,11 @@ export default async function Welcome() {
         <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
           Hoş Geldiniz!
         </h2>
+        {message && (
+          <div className={`mt-4 rounded-md p-4 ${message.type === "success" ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}>
+            {message.text}
+          </div>
+        )}
         <p className="mt-2 text-center text-sm text-gray-600">
           Düğün hediyelerinizi takip etmeye başlamak için bir seçim yapın
         </p>

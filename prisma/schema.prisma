@@ -66,6 +66,7 @@ model Wedding {
   members     WeddingMember[]
   assets      Asset[]
   donors      Donor[]
+  invitationTokens InvitationToken[]
 }
 
 model WeddingMember {
@@ -73,6 +74,7 @@ model WeddingMember {
   weddingId String
   userId    String
   role      WeddingRole
+  status    MemberStatus @default(PENDING)
   createdAt DateTime    @default(now())
   wedding   Wedding     @relation(fields: [weddingId], references: [id], onDelete: Cascade)
   user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -85,6 +87,12 @@ model WeddingMember {
 enum WeddingRole {
   ADMIN
   VIEWER
+}
+
+enum MemberStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model Asset {
@@ -173,4 +181,15 @@ enum AssetType {
   TURKISH_LIRA
   DOLLAR
   EURO
+}
+
+model InvitationToken {
+  id        String   @id @default(uuid())
+  weddingId String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  wedding   Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+
+  @@index([weddingId])
 }
