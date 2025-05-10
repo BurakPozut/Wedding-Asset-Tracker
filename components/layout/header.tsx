@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut, signIn } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const navigation = [
   { name: "Anasayfa", href: "/" },
@@ -16,6 +16,26 @@ export function Header() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [weddingName, setWeddingName] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchWeddingName = async () => {
+      try {
+        const selectedWeddingId = localStorage.getItem("selectedWeddingId");
+        if (selectedWeddingId) {
+          const response = await fetch(`/api/weddings/${selectedWeddingId}`);
+          if (response.ok) {
+            const weddingData = await response.json();
+            setWeddingName(weddingData.name);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching wedding name:", error);
+      }
+    };
+
+    fetchWeddingName();
+  }, []);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -23,11 +43,17 @@ export function Header() {
 
   return (
     <header className="bg-white shadow">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between p-4 lg:px-8" aria-label="Global">
+      <nav className="mx-auto flex max-w-8xl items-center justify-between px-2 py-3 lg:px-4" aria-label="Global">
         <div className="flex lg:flex-1">
-          <Link href="/" className="-m-1.5 p-1.5 text-xl font-bold text-indigo-600">
+          <Link href="/" className="-m-1 p-1 text-xl font-bold text-indigo-600">
             Düğün Hediye Takibi
           </Link>
+          {weddingName && (
+            <div className="ml-3 flex items-center">
+              <span className="text-sm text-gray-500">|</span>
+              <span className="ml-3 text-sm font-medium text-gray-900">{weddingName}</span>
+            </div>
+          )}
         </div>
         
         {/* Mobile menu button */}

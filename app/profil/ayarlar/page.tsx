@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 type WeddingMember = {
   id: string;
@@ -15,6 +16,7 @@ type WeddingMember = {
 
 export default function SettingsPage() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [weddingDate, setWeddingDate] = useState<string>("");
@@ -96,6 +98,17 @@ export default function SettingsPage() {
     }
   };
 
+  const handleWeddingChange = async () => {
+    // Clear all caches and local storage
+    localStorage.removeItem("selectedWeddingId");
+    
+    // Clear Next.js router cache
+    router.refresh();
+    
+    // Navigate to wedding selection page
+    router.push("/dugun-secimi");
+  };
+
   if (isLoading) {
     return (
       <div className="max-w-2xl mx-auto py-8">
@@ -116,6 +129,29 @@ export default function SettingsPage() {
           {message.text}
         </div>
       )}
+      
+      {/* Wedding Change Section */}
+      <div className="bg-white shadow rounded-lg mb-8">
+        <div className="px-4 py-5 sm:p-6">
+          <h2 className="text-lg font-medium leading-6 text-gray-900 mb-4">Düğün Değiştir</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Farklı bir düğün arasında geçiş yapmak için aşağıdaki butona tıklayın.
+          </p>
+          <Button
+            onClick={handleWeddingChange}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+              <path d="M16 21h5v-5"/>
+            </svg>
+            Düğün Değiştir
+          </Button>
+        </div>
+      </div>
       
       {/* New Wedding Creation Section */}
       <div className="bg-white shadow rounded-lg mb-8">
